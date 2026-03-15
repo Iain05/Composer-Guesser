@@ -6,6 +6,12 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8080',
+      '/audio': 'http://localhost:8081',
+    },
+  },
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),

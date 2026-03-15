@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Music, Play, Pause } from 'lucide-react';
-import { MAX_PLAYS, PIECE_DURATION } from '@src/data/gameData';
+import { MAX_PLAYS } from '@src/data/gameData';
 
 interface AudioPlayerProps {
   disabled: boolean;
+  audioUrl: string | null;
 }
 
 function formatTime(seconds: number): string {
@@ -12,42 +13,68 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ disabled }) => {
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ disabled, audioUrl }) => {
   const [playCount, setPlayCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackTime, setPlaybackTime] = useState(0);
+  const [isInPlaySession, setIsInPlaySession] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!isPlaying) return;
+  function seek(clientX: number) {
+    const audio = audioRef.current;
+    const bar = progressBarRef.current;
+    if (!audio || !bar || duration === 0) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * duration;
+    setCurrentTime(ratio * duration);
+  }
 
-    const id = setInterval(() => {
-      setPlaybackTime((t) => Math.min(+(t + 0.1).toFixed(1), PIECE_DURATION));
-    }, 100);
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    seek(e.clientX);
+  }
 
-    return () => clearInterval(id);
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (playbackTime >= PIECE_DURATION && isPlaying) {
-      setIsPlaying(false);
-    }
-  }, [playbackTime, isPlaying]);
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.buttons === 0) return;
+    seek(e.clientX);
+  }
 
   function handlePlayPause() {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (isPlaying) {
+      audio.pause();
       setIsPlaying(false);
+    } else if (isInPlaySession) {
+      audio.play();
+      setIsPlaying(true);
     } else if (playCount < MAX_PLAYS && !disabled) {
+      audio.currentTime = 0;
+      setCurrentTime(0);
       setPlayCount((c) => c + 1);
-      setPlaybackTime(0);
+      setIsInPlaySession(true);
+      audio.play();
       setIsPlaying(true);
     }
   }
 
-  const isExhausted = playCount >= MAX_PLAYS;
-  const progress = Math.min((playbackTime / PIECE_DURATION) * 100, 100);
+  const isExhausted = !isInPlaySession && playCount >= MAX_PLAYS;
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-8 rounded-2xl shadow-sm border border-indigo-200">
+      <audio
+        ref={audioRef}
+        src={audioUrl ?? undefined}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onDurationChange={(e) => setDuration(e.currentTarget.duration)}
+        onEnded={() => { setIsPlaying(false); setIsInPlaySession(false); }}
+      />
+
       <div className="flex items-center gap-2 text-indigo-600 mb-4">
         <Music className="w-5 h-5" />
         <span className="text-sm font-bold uppercase tracking-wider">Listen to the Mystery</span>
@@ -56,7 +83,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ disabled }) => {
       <div className="flex items-center gap-4">
         <button
           onClick={handlePlayPause}
-          disabled={isExhausted || disabled}
+          disabled={isExhausted || disabled || !audioUrl}
           className="flex items-center justify-center w-16 h-16 rounded-full bg-indigo-600 text-white transition-all active:scale-95 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPlaying ? (
@@ -67,19 +94,23 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ disabled }) => {
         </button>
 
         <div className="flex-1 flex flex-col justify-center">
-          <div className="bg-white rounded-full h-2 mb-2 overflow-hidden shadow-sm">
+          <div
+            ref={progressBarRef}
+            className="bg-white rounded-full h-2 mb-2 overflow-hidden shadow-sm cursor-pointer"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+          >
             <div
-              className="h-full bg-indigo-600 transition-all"
+              className="h-full bg-indigo-600 transition-all duration-75"
               style={{ width: `${progress}%` }}
             />
           </div>
           <div className="flex justify-between text-xs text-slate-600">
-            <span>{formatTime(playbackTime)}</span>
-            <span>{formatTime(PIECE_DURATION)}</span>
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
           </div>
         </div>
       </div>
-
     </div>
   );
 };

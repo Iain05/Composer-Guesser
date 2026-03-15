@@ -9,16 +9,6 @@ export const ERAS = [
   'Contemporary',
 ] as const;
 
-export const GENRES = [
-  'Symphony',
-  'Concerto',
-  'Sonata',
-  'Etude',
-  'Opera',
-  'Choral',
-  'Chamber',
-] as const;
-
 export const MAX_PLAYS = 3;
 export const MAX_GUESSES = 5;
 export const PIECE_DURATION = 135; // 2:15 in seconds
@@ -44,43 +34,36 @@ export const PIECES: Piece[] = [
   {
     title: 'Symphony No. 5',
     composer: 'Ludwig van Beethoven',
-    genre: 'Symphony',
     clue: "Four iconic opening notes: 'Short-short-short-long' in C minor.",
   },
   {
     title: 'The Four Seasons',
     composer: 'Antonio Vivaldi',
-    genre: 'Concerto',
     clue: 'A set of four violin concertos depicting spring, summer, autumn, and winter.',
   },
   {
     title: 'Brandenburg Concertos',
     composer: 'Johann Sebastian Bach',
-    genre: 'Concerto',
     clue: 'A collection of six instrumental works often cited as the pinnacle of Baroque polyphony.',
   },
   {
     title: 'The Nutcracker',
     composer: 'Pyotr Ilyich Tchaikovsky',
-    genre: 'Opera',
     clue: "A world-famous holiday ballet featuring the 'Dance of the Sugar Plum Fairy'.",
   },
   {
     title: 'Nocturne Op. 9 No. 2',
     composer: 'Frédéric Chopin',
-    genre: 'Piano',
     clue: "A tender, lyrical piano piece that epitomizes the Romantic 'song without words' style.",
   },
   {
     title: 'The Rite of Spring',
     composer: 'Igor Stravinsky',
-    genre: 'Ballet',
     clue: 'A revolutionary work that caused a riot at its premiere due to its primal rhythms.',
   },
   {
     title: 'Requiem',
     composer: 'Wolfgang Amadeus Mozart',
-    genre: 'Choral',
     clue: "A haunting final masterpiece left unfinished at the composer's death.",
   },
 ];

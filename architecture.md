@@ -99,9 +99,48 @@ The `audio-files` volume is populated manually by copying mp3 files into it on t
 | last_name              | VARCHAR(100) | Not null                             |
 | birth_year             | INT          | Not null                             |
 | death_year             | INT          | Nullable                             |
-| era                    | VARCHAR(50)  | e.g. Baroque, Classical, Romantic    |
+| era                    | era_type     | PostgreSQL enum: `BAROQUE`, `CLASSICAL`, `EARLY_ROMANTIC`, etc |
 | nationality            | VARCHAR(100) |                                      |
 | number_of_compositions | INT          | Nullable                             |
+
+### `tbl_user`
+| Column        | Type         | Notes                        |
+|---------------|--------------|------------------------------|
+| user_id       | BIGINT       | Primary key, auto-increment  |
+| username      | VARCHAR(50)  | Not null, unique             |
+| email         | VARCHAR(255) | Not null, unique             |
+| password_hash | VARCHAR(255) | Not null                     |
+| total_points  | INT          | Not null, default 0          |
+| created_at    | TIMESTAMP    | Not null                     |
+
+### `tbl_excerpt`
+| Column              | Type         | Notes                                      |
+|---------------------|--------------|--------------------------------------------|
+| excerpt_id          | BIGINT       | Primary key, auto-increment                |
+| composer_id         | BIGINT       | FK → tbl_composer, not null                |
+| uploaded_by_user_id | BIGINT       | FK → tbl_user, not null                    |
+| name                | VARCHAR(255) | Not null                                   |
+| filename            | VARCHAR(255) | Audio filename served by nginx, not null   |
+| composition_year    | INT          | Nullable                                   |
+| work_number         | INT          | Stripped opus/BWV number, nullable         |
+| description         | TEXT         | Nullable                                   |
+| date_uploaded       | TIMESTAMP    | Not null                                   |
+| times_used          | INT          | Not null, default 0                        |
+
+### `tbl_excerpt_day`
+| Column     | Type   | Notes                          |
+|------------|--------|--------------------------------|
+| date       | DATE   | Primary key                    |
+| excerpt_id | BIGINT | FK → tbl_excerpt, not null     |
+
+### `tbl_user_point`
+| Column          | Type      | Notes                              |
+|-----------------|-----------|------------------------------------|
+| point_id        | BIGINT    | Primary key, auto-increment        |
+| user_id         | BIGINT    | FK → tbl_user, not null            |
+| excerpt_day_date| DATE      | FK → tbl_excerpt_day, not null     |
+| points          | INT       | Not null                           |
+| earned_at       | TIMESTAMP | Not null                           |
 
 ---
 

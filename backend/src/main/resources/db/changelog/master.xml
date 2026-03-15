@@ -6,5 +6,10 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <include file="db/changelog/changes/001-create-tbl-composer.xml"/>
+    <include file="db/changelog/changes/002-alter-tbl-composer-era-enum.xml"/>
+    <include file="db/changelog/changes/003-create-tbl-user.xml"/>
+    <include file="db/changelog/changes/004-create-tbl-excerpt.xml"/>
+    <include file="db/changelog/changes/005-create-tbl-excerpt-day.xml"/>
+    <include file="db/changelog/changes/006-create-tbl-user-point.xml"/>
 
 </databaseChangeLog>

@@ -8,12 +8,9 @@ export interface Composer {
 export interface Piece {
   title: string;
   composer: string;
-  genre: string;
   clue: string;
 }
 
 export type HintStatus = 'correct' | 'close' | 'wrong';
 
-export interface Guess extends Composer {
-  genreGuessed: string;
-}
+export type Guess = Composer;

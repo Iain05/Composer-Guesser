@@ -21,18 +21,16 @@ export function useGameState() {
     gameKey: 0,
   }));
 
-  const submitGuess = useCallback((composerName: string, genreName: string): boolean => {
+  const submitGuess = useCallback((composerName: string): boolean => {
     const composerObj = COMPOSERS.find((c) => c.name === composerName);
-    if (!composerObj || !genreName) return false;
+    if (!composerObj) return false;
 
     setState((prev) => {
       if (prev.isGameOver) return prev;
 
-      const guess: Guess = { ...composerObj, genreGuessed: genreName };
+      const guess: Guess = { ...composerObj };
       const newGuesses = [...prev.guesses, guess];
-      const won =
-        composerObj.name === prev.targetPiece.composer &&
-        genreName === prev.targetPiece.genre;
+      const won = composerObj.name === prev.targetPiece.composer;
       const isGameOver = won || newGuesses.length >= MAX_GUESSES;
 
       return { ...prev, guesses: newGuesses, isGameOver };
@@ -54,8 +52,7 @@ export function useGameState() {
   const won =
     state.isGameOver &&
     !!lastGuess &&
-    lastGuess.name === state.targetPiece.composer &&
-    lastGuess.genreGuessed === state.targetPiece.genre;
+    lastGuess.name === state.targetPiece.composer;
 
   return {
     targetPiece: state.targetPiece,

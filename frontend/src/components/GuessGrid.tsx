@@ -20,14 +20,14 @@ function getYearText(guessYear: number, targetYear: number): string {
   return guessYear < targetYear ? `${guessYear} ↑` : `${guessYear} ↓`;
 }
 
-const COLUMNS = ['Composer', 'Year', 'Era', 'Nationality', 'Genre'];
+const COLUMNS = ['Composer', 'Year', 'Era', 'Nationality'];
 
 const GuessGrid: React.FC<GuessGridProps> = ({ guesses, targetPiece }) => {
   const targetComposer = COMPOSERS.find((c) => c.name === targetPiece.composer);
 
   return (
     <div className="mt-4">
-      <div className="grid grid-cols-5 gap-2 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+      <div className="grid grid-cols-4 gap-2 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
         {COLUMNS.map((col) => (
           <div key={col}>{col}</div>
         ))}
@@ -39,19 +39,16 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, targetPiece }) => {
 
           if (!guess || !targetComposer) {
             return (
-              <div key={i} className="grid grid-cols-5 gap-2">
-                {Array.from({ length: 5 }, (_, j) => (
-                  <div
-                    key={j}
-                    className="bg-white border-2 border-slate-100 rounded-xl h-16"
-                  />
+              <div key={i} className="grid grid-cols-4 gap-2">
+                {Array.from({ length: 4 }, (_, j) => (
+                  <div key={j} className="bg-white border-2 border-slate-100 rounded-xl h-16" />
                 ))}
               </div>
             );
           }
 
           return (
-            <div key={i} className="grid grid-cols-5 gap-2">
+            <div key={i} className="grid grid-cols-4 gap-2">
               <HintCard
                 text={guess.name.split(' ').slice(-1)[0]}
                 status={guess.name === targetComposer.name ? 'correct' : 'wrong'}
@@ -67,10 +64,6 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, targetPiece }) => {
               <HintCard
                 text={guess.nationality}
                 status={guess.nationality === targetComposer.nationality ? 'correct' : 'wrong'}
-              />
-              <HintCard
-                text={guess.genreGuessed}
-                status={guess.genreGuessed === targetPiece.genre ? 'correct' : 'wrong'}
               />
             </div>
           );

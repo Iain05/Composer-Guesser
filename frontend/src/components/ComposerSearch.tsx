@@ -1,19 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import { COMPOSERS } from '@src/data/gameData';
+import type { ComposerSummary } from '@src/api/composer';
 
 interface ComposerSearchProps {
   value: string;
   onChange: (value: string) => void;
   disabled: boolean;
+  composers: ComposerSummary[];
 }
 
-const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, disabled }) => {
+const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, disabled, composers }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = value.trim()
-    ? COMPOSERS.filter((c) => c.name.toLowerCase().includes(value.toLowerCase()))
+    ? composers.filter((c) => c.name.toLowerCase().includes(value.toLowerCase()))
     : [];
 
   useEffect(() => {

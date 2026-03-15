@@ -1,0 +1,35 @@
+package org.composerguesser.backend.controller;
+
+import org.composerguesser.backend.model.ExcerptDay;
+import org.composerguesser.backend.repository.ExcerptDayRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+
+@RestController
+@RequestMapping("/excerpt")
+public class ExcerptController {
+
+    private static final ZoneId PACIFIC = ZoneId.of("America/Vancouver");
+
+    private final ExcerptDayRepository excerptDayRepository;
+    private final String audioBaseUrl;
+
+    public ExcerptController(ExcerptDayRepository excerptDayRepository,
+                             @Value("${audio.base-url}") String audioBaseUrl) {
+        this.excerptDayRepository = excerptDayRepository;
+        this.audioBaseUrl = audioBaseUrl;
+    }
+
+    @GetMapping("/daily-challenge")
+    public ResponseEntity<String> getDailyChallenge() {
+        LocalDate today = LocalDate.now(PACIFIC);
+        return excerptDayRepository.findById(today)
+                .map(ExcerptDay::getExcerpt)
+                .map(excerpt -> ResponseEntity.ok(audioBaseUrl + "/" + excerpt.getFilename()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+}

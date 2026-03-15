@@ -23,8 +23,9 @@ public class Composer {
     @Column(name = "death_year")
     private Integer deathYear;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String era;
+    private Era era;
 
     @Column(nullable = false)
     private String nationality;
@@ -47,8 +48,8 @@ public class Composer {
     public Integer getDeathYear() { return deathYear; }
     public void setDeathYear(Integer deathYear) { this.deathYear = deathYear; }
 
-    public String getEra() { return era; }
-    public void setEra(String era) { this.era = era; }
+    public Era getEra() { return era; }
+    public void setEra(Era era) { this.era = era; }
 
     public String getNationality() { return nationality; }
     public void setNationality(String nationality) { this.nationality = nationality; }
