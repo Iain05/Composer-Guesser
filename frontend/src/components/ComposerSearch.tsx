@@ -5,11 +5,12 @@ import type { ComposerSummary } from '@src/api/composer';
 interface ComposerSearchProps {
   value: string;
   onChange: (value: string) => void;
+  onSelect: (composer: ComposerSummary) => void;
   disabled: boolean;
   composers: ComposerSummary[];
 }
 
-const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, disabled, composers }) => {
+const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, onSelect, disabled, composers }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -32,8 +33,9 @@ const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, disabl
     setOpen(true);
   }
 
-  function handleSelect(name: string) {
-    onChange(name);
+  function handleSelect(composer: ComposerSummary) {
+    onChange(composer.name);
+    onSelect(composer);
     setOpen(false);
   }
 
@@ -63,9 +65,9 @@ const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, disabl
         <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
           {filtered.map((c) => (
             <button
-              key={c.name}
+              key={c.composerId}
               type="button"
-              onMouseDown={() => handleSelect(c.name)}
+              onMouseDown={() => handleSelect(c)}
               className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm border-b border-slate-100 last:border-0"
             >
               {c.name}

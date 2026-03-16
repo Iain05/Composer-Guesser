@@ -148,11 +148,13 @@ The `audio-files` volume is populated manually by copying mp3 files into it on t
 
 All routes are prefixed with `/api` (configured in `application.properties`).
 
-| Method | Route                  | Description                                            |
-|--------|------------------------|--------------------------------------------------------|
-| GET    | `/api/health`          | Health check                                           |
-| GET    | `/api/composers`       | List all composers — returns `composer_id` and `name` only |
-| GET    | `/api/composers/{id}`  | Get full details for a single composer                 |
+| Method | Route                         | Description                                                |
+|--------|-------------------------------|------------------------------------------------------------|
+| GET    | `/api/health`                 | Health check                                               |
+| GET    | `/api/composers`              | List all composers — returns `composerId` and `name` only  |
+| GET    | `/api/composers/{id}`         | Get full details for a single composer                     |
+| GET    | `/api/excerpt/daily-challenge`| Get today's excerpt (Pacific time)                         |
+| POST   | `/api/guess`                  | Submit a guess, returns hint feedback                      |
 
 ### `/api/composers` response shape
 ```json
@@ -162,21 +164,48 @@ All routes are prefixed with `/api` (configured in `application.properties`).
 ]
 ```
 
-Used to populate the frontend composer search. The frontend sends back only the `composerId` with a guess — the backend resolves everything else.
+### `/api/excerpt/daily-challenge` response shape
+```json
+{
+  "excerptId": 1,
+  "audioUrl": "/audio/beethoven-7.mp3"
+}
+```
+
+The date is resolved server-side in `America/Vancouver` — the client has no input. `audioUrl` is a root-relative path proxied through the frontend nginx to the audio-server container.
+
+### `/api/guess` request / response
+
+**Request:**
+```json
+{
+  "excerptId": 1,
+  "composerId": 3
+}
+```
+
+**Response:**
+```json
+{
+  "correct": false,
+  "composerName": "Wolfgang Amadeus Mozart",
+  "birthYear": 1756,
+  "era": "CLASSICAL",
+  "nationality": "Austrian",
+  "composerHint": "wrong",
+  "yearHint": "TOO_LOW",
+  "eraHint": "close",
+  "nationalityHint": "wrong",
+  "pieceTitle": "Symphony No. 7 in A major - II. Allegretto",
+  "targetComposerName": "Ludwig van Beethoven"
+}
+```
+
+`yearHint` is `CORRECT`, `TOO_LOW`, or `TOO_HIGH`. `eraHint` is `correct`, `close` (adjacent era), or `wrong`. `targetComposerName` and `pieceTitle` are always returned so the end screen can show the answer regardless of win/loss.
 
 ### Audio URL Strategy
 
-When audio endpoints are added, the backend will return a URL pointing at the nginx audio container rather than streaming the bytes itself. nginx handles HTTP Range requests natively, which is required for the browser `<audio>` element to support seeking.
-
-In production both the audio server and backend sit behind a reverse proxy (e.g. Caddy), exposing clean URLs rather than bare ports.
-
----
-
-## Frontend Changes Required
-
-- `ComposerSearch.tsx` populates from `GET /api/composers` instead of hardcoded data.
-- Remove hardcoded composers from `gameData.ts` once the API is wired up.
-- Guess submission will move server-side — frontend sends `composerId`, backend evaluates and returns hint feedback.
+Audio is served by a dedicated nginx container (`audio-server`) from a mounted volume. The frontend nginx proxies `/audio/` to the audio-server, and `/api/` to the backend — so the browser only ever talks to one host. nginx handles HTTP Range requests natively, which is required for the `<audio>` element to support seeking.
 
 ---
 

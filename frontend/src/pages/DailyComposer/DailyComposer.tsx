@@ -8,16 +8,23 @@ import { getDailyChallenge } from '@src/api/excerpt';
 import { getComposers, type ComposerSummary } from '@src/api/composer';
 
 const DailyComposer: React.FC = () => {
-  const { targetPiece, guesses, isGameOver, gameKey, won, submitGuess, resetGame } =
-    useGameState();
-
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [excerptId, setExcerptId] = useState<number | null>(null);
   const [composers, setComposers] = useState<ComposerSummary[]>([]);
 
   useEffect(() => {
-    getDailyChallenge().then(setAudioUrl).catch(console.error);
+    getDailyChallenge()
+      .then((data) => {
+        setAudioUrl(data.audioUrl);
+        setExcerptId(data.excerptId);
+      })
+      .catch(console.error);
+
     getComposers().then(setComposers).catch(console.error);
   }, []);
+
+  const { guesses, isGameOver, gameKey, won, lastGuess, submitGuess, resetGame } =
+    useGameState(excerptId);
 
   return (
     <>
@@ -27,14 +34,23 @@ const DailyComposer: React.FC = () => {
       </header>
 
       <main className="max-w-xl w-full flex flex-col gap-6">
-        <AudioPlayer key={gameKey} disabled={isGameOver} audioUrl={audioUrl} />
+        <AudioPlayer key={gameKey} audioUrl={audioUrl} />
 
-        <GuessControls disabled={isGameOver} composers={composers} onSubmit={(composer) => submitGuess(composer)} />
+        <GuessControls
+          disabled={isGameOver}
+          composers={composers}
+          onSubmit={submitGuess}
+        />
 
-        <GuessGrid guesses={guesses} targetPiece={targetPiece} />
+        <GuessGrid guesses={guesses} />
 
-        {isGameOver && (
-          <GameStatus won={won} targetPiece={targetPiece} onPlayAgain={resetGame} />
+        {isGameOver && lastGuess && (
+          <GameStatus
+            won={won}
+            composerName={lastGuess.targetComposerName}
+            pieceTitle={lastGuess.pieceTitle}
+            onPlayAgain={resetGame}
+          />
         )}
       </main>
     </>

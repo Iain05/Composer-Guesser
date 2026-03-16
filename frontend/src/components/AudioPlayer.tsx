@@ -1,9 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Music, Play, Pause } from 'lucide-react';
-import { MAX_PLAYS } from '@src/data/gameData';
 
 interface AudioPlayerProps {
-  disabled: boolean;
   audioUrl: string | null;
 }
 
@@ -13,8 +11,7 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ disabled, audioUrl }) => {
-  const [playCount, setPlayCount] = useState(0);
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInPlaySession, setIsInPlaySession] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -52,17 +49,15 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ disabled, audioUrl }) => {
     } else if (isInPlaySession) {
       audio.play();
       setIsPlaying(true);
-    } else if (playCount < MAX_PLAYS && !disabled) {
+    } else {
       audio.currentTime = 0;
       setCurrentTime(0);
-      setPlayCount((c) => c + 1);
       setIsInPlaySession(true);
       audio.play();
       setIsPlaying(true);
     }
   }
 
-  const isExhausted = !isInPlaySession && playCount >= MAX_PLAYS;
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
@@ -83,7 +78,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ disabled, audioUrl }) => {
       <div className="flex items-center gap-4">
         <button
           onClick={handlePlayPause}
-          disabled={isExhausted || disabled || !audioUrl}
+          disabled={!audioUrl}
           className="flex items-center justify-center w-16 h-16 rounded-full bg-indigo-600 text-white transition-all active:scale-95 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPlaying ? (

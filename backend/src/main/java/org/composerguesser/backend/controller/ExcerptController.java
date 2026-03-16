@@ -1,5 +1,6 @@
 package org.composerguesser.backend.controller;
 
+import org.composerguesser.backend.dto.DailyChallengeDto;
 import org.composerguesser.backend.model.ExcerptDay;
 import org.composerguesser.backend.repository.ExcerptDayRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,11 +26,14 @@ public class ExcerptController {
     }
 
     @GetMapping("/daily-challenge")
-    public ResponseEntity<String> getDailyChallenge() {
+    public ResponseEntity<DailyChallengeDto> getDailyChallenge() {
         LocalDate today = LocalDate.now(PACIFIC);
         return excerptDayRepository.findById(today)
                 .map(ExcerptDay::getExcerpt)
-                .map(excerpt -> ResponseEntity.ok(audioBaseUrl + "/" + excerpt.getFilename()))
+                .map(excerpt -> ResponseEntity.ok(new DailyChallengeDto(
+                        excerpt.getExcerptId(),
+                        audioBaseUrl + "/" + excerpt.getFilename()
+                )))
                 .orElse(ResponseEntity.notFound().build());
     }
 }

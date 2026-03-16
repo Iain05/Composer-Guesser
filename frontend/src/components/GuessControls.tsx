@@ -5,17 +5,29 @@ import type { ComposerSummary } from '@src/api/composer';
 interface GuessControlsProps {
   disabled: boolean;
   composers: ComposerSummary[];
-  onSubmit: (composerName: string) => boolean;
+  onSubmit: (composerId: number) => Promise<boolean>;
 }
 
 const GuessControls: React.FC<GuessControlsProps> = ({ disabled, composers, onSubmit }) => {
-  const [composer, setComposer] = useState('');
+  const [composerInput, setComposerInput] = useState('');
+  const [selectedComposer, setSelectedComposer] = useState<ComposerSummary | null>(null);
   const [shake, setShake] = useState(false);
 
-  function handleSubmit() {
-    const success = onSubmit(composer);
+  function handleInput(value: string) {
+    setComposerInput(value);
+    setSelectedComposer(null);
+  }
+
+  async function handleSubmit() {
+    if (!selectedComposer) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
+    const success = await onSubmit(selectedComposer.composerId);
     if (success) {
-      setComposer('');
+      setComposerInput('');
+      setSelectedComposer(null);
     } else {
       setShake(true);
       setTimeout(() => setShake(false), 500);
@@ -24,7 +36,13 @@ const GuessControls: React.FC<GuessControlsProps> = ({ disabled, composers, onSu
 
   return (
     <div className="flex flex-col gap-4">
-      <ComposerSearch value={composer} onChange={setComposer} disabled={disabled} composers={composers} />
+      <ComposerSearch
+        value={composerInput}
+        onChange={handleInput}
+        onSelect={setSelectedComposer}
+        disabled={disabled}
+        composers={composers}
+      />
       <button
         onClick={handleSubmit}
         disabled={disabled}

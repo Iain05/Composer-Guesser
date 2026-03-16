@@ -1,30 +1,21 @@
 import React from 'react';
 import HintCard from './HintCard';
-import { COMPOSERS, ERAS, MAX_GUESSES } from '@src/data/gameData';
-import type { Guess, Piece, HintStatus } from '@src/types/game';
+import { MAX_GUESSES } from '@src/data/gameData';
+import type { GuessResult } from '@src/api/guess';
+import type { HintStatus } from '@src/types/game';
 
 interface GuessGridProps {
-  guesses: Guess[];
-  targetPiece: Piece;
+  guesses: GuessResult[];
 }
 
-function getEraStatus(guessEra: string, targetEra: string): HintStatus {
-  if (guessEra === targetEra) return 'correct';
-  const guessIdx = ERAS.indexOf(guessEra as (typeof ERAS)[number]);
-  const targetIdx = ERAS.indexOf(targetEra as (typeof ERAS)[number]);
-  return Math.abs(guessIdx - targetIdx) === 1 ? 'close' : 'wrong';
+function getYearText(birthYear: number, yearHint: GuessResult['yearHint']): string {
+  if (yearHint === 'CORRECT') return String(birthYear);
+  return yearHint === 'TOO_LOW' ? `${birthYear} ↑` : `${birthYear} ↓`;
 }
 
-function getYearText(guessYear: number, targetYear: number): string {
-  if (guessYear === targetYear) return String(guessYear);
-  return guessYear < targetYear ? `${guessYear} ↑` : `${guessYear} ↓`;
-}
+const COLUMNS = ['Composer', 'Birth Year', 'Era', 'Nationality'];
 
-const COLUMNS = ['Composer', 'Year', 'Era', 'Nationality'];
-
-const GuessGrid: React.FC<GuessGridProps> = ({ guesses, targetPiece }) => {
-  const targetComposer = COMPOSERS.find((c) => c.name === targetPiece.composer);
-
+const GuessGrid: React.FC<GuessGridProps> = ({ guesses }) => {
   return (
     <div className="mt-4">
       <div className="grid grid-cols-4 gap-2 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
@@ -37,7 +28,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, targetPiece }) => {
         {Array.from({ length: MAX_GUESSES }, (_, i) => {
           const guess = guesses[i];
 
-          if (!guess || !targetComposer) {
+          if (!guess) {
             return (
               <div key={i} className="grid grid-cols-4 gap-2">
                 {Array.from({ length: 4 }, (_, j) => (
@@ -47,24 +38,17 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, targetPiece }) => {
             );
           }
 
+          const lastName = guess.composerName.split(' ').slice(-1)[0];
+
           return (
             <div key={i} className="grid grid-cols-4 gap-2">
+              <HintCard text={lastName} status={guess.composerHint} />
               <HintCard
-                text={guess.name.split(' ').slice(-1)[0]}
-                status={guess.name === targetComposer.name ? 'correct' : 'wrong'}
+                text={getYearText(guess.birthYear, guess.yearHint)}
+                status={guess.yearHint === 'CORRECT' ? 'correct' : 'wrong'}
               />
-              <HintCard
-                text={getYearText(guess.year, targetComposer.year)}
-                status={guess.year === targetComposer.year ? 'correct' : 'wrong'}
-              />
-              <HintCard
-                text={guess.era}
-                status={getEraStatus(guess.era, targetComposer.era)}
-              />
-              <HintCard
-                text={guess.nationality}
-                status={guess.nationality === targetComposer.nationality ? 'correct' : 'wrong'}
-              />
+              <HintCard text={guess.era} status={guess.eraHint as HintStatus} />
+              <HintCard text={guess.nationality} status={guess.nationalityHint} />
             </div>
           );
         })}

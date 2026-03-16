@@ -1,66 +1,31 @@
 import { useState, useCallback } from 'react';
-import { COMPOSERS, PIECES, MAX_GUESSES } from '@src/data/gameData';
-import type { Piece, Guess } from '@src/types/game';
+import { MAX_GUESSES } from '@src/data/gameData';
+import { submitGuess as submitGuessApi, type GuessResult } from '@src/api/guess';
 
-interface GameState {
-  targetPiece: Piece;
-  guesses: Guess[];
-  isGameOver: boolean;
-  gameKey: number;
-}
+export function useGameState(excerptId: number | null) {
+  const [guesses, setGuesses] = useState<GuessResult[]>([]);
+  const [gameKey, setGameKey] = useState(0);
 
-function pickRandomPiece(): Piece {
-  return PIECES[Math.floor(Math.random() * PIECES.length)];
-}
+  const won = guesses.some((g) => g.correct);
+  const isGameOver = won || guesses.length >= MAX_GUESSES;
 
-export function useGameState() {
-  const [state, setState] = useState<GameState>(() => ({
-    targetPiece: pickRandomPiece(),
-    guesses: [],
-    isGameOver: false,
-    gameKey: 0,
-  }));
-
-  const submitGuess = useCallback((composerName: string): boolean => {
-    const composerObj = COMPOSERS.find((c) => c.name === composerName);
-    if (!composerObj) return false;
-
-    setState((prev) => {
-      if (prev.isGameOver) return prev;
-
-      const guess: Guess = { ...composerObj };
-      const newGuesses = [...prev.guesses, guess];
-      const won = composerObj.name === prev.targetPiece.composer;
-      const isGameOver = won || newGuesses.length >= MAX_GUESSES;
-
-      return { ...prev, guesses: newGuesses, isGameOver };
-    });
-
-    return true;
-  }, []);
+  const submitGuess = useCallback(async (composerId: number): Promise<boolean> => {
+    if (!excerptId || isGameOver) return false;
+    try {
+      const result = await submitGuessApi(excerptId, composerId);
+      setGuesses((prev) => [...prev, result]);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [excerptId, isGameOver]);
 
   const resetGame = useCallback(() => {
-    setState((prev) => ({
-      targetPiece: pickRandomPiece(),
-      guesses: [],
-      isGameOver: false,
-      gameKey: prev.gameKey + 1,
-    }));
+    setGuesses([]);
+    setGameKey((k) => k + 1);
   }, []);
 
-  const lastGuess = state.guesses[state.guesses.length - 1];
-  const won =
-    state.isGameOver &&
-    !!lastGuess &&
-    lastGuess.name === state.targetPiece.composer;
+  const lastGuess = guesses[guesses.length - 1];
 
-  return {
-    targetPiece: state.targetPiece,
-    guesses: state.guesses,
-    isGameOver: state.isGameOver,
-    gameKey: state.gameKey,
-    won,
-    submitGuess,
-    resetGame,
-  };
+  return { guesses, isGameOver, gameKey, won, lastGuess, submitGuess, resetGame };
 }
