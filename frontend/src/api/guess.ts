@@ -10,12 +10,15 @@ export interface GuessResult {
   nationalityHint: 'correct' | 'wrong';
   pieceTitle: string;
   targetComposerName: string;
+  pointsEarned: number;
 }
 
-export async function submitGuess(excerptId: number, composerId: number): Promise<GuessResult> {
+export async function submitGuess(excerptId: number, composerId: number, token: string | null): Promise<GuessResult> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch('/api/guess', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ excerptId, composerId }),
   });
   if (!res.ok) throw new Error('Failed to submit guess');

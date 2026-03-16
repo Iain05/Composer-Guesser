@@ -2,25 +2,39 @@ package org.composerguesser.backend.service;
 
 import org.composerguesser.backend.dto.GuessRequestDto;
 import org.composerguesser.backend.dto.GuessResultDto;
-import org.composerguesser.backend.model.Composer;
-import org.composerguesser.backend.model.Era;
-import org.composerguesser.backend.model.Excerpt;
+import org.composerguesser.backend.model.*;
 import org.composerguesser.backend.repository.ComposerRepository;
 import org.composerguesser.backend.repository.ExcerptRepository;
+import org.composerguesser.backend.repository.UserPointRepository;
+import org.composerguesser.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 public class GuessService {
 
+    private static final int POINTS_PER_WIN = 5;
+    private static final ZoneId VANCOUVER = ZoneId.of("America/Vancouver");
+
     private final ExcerptRepository excerptRepository;
     private final ComposerRepository composerRepository;
+    private final UserRepository userRepository;
+    private final UserPointRepository userPointRepository;
 
-    public GuessService(ExcerptRepository excerptRepository, ComposerRepository composerRepository) {
+    public GuessService(ExcerptRepository excerptRepository, ComposerRepository composerRepository,
+                        UserRepository userRepository, UserPointRepository userPointRepository) {
         this.excerptRepository = excerptRepository;
         this.composerRepository = composerRepository;
+        this.userRepository = userRepository;
+        this.userPointRepository = userPointRepository;
     }
 
-    public GuessResultDto processGuess(GuessRequestDto request) {
+    @Transactional
+    public GuessResultDto processGuess(GuessRequestDto request, User user) {
         Excerpt excerpt = excerptRepository.findById(request.getExcerptId())
                 .orElseThrow(() -> new IllegalArgumentException("Excerpt not found"));
 
@@ -46,6 +60,17 @@ public class GuessService {
         String eraHint = getEraHint(guessed.getEra(), target.getEra());
         String nationalityHint = guessed.getNationality().equals(target.getNationality()) ? "correct" : "wrong";
 
+        int pointsEarned = 0;
+        if (correct && user != null) {
+            LocalDate today = LocalDate.now(VANCOUVER);
+            if (!userPointRepository.existsByUserIdAndExcerptDayDate(user.getUserId(), today)) {
+                userPointRepository.save(new UserPoint(user.getUserId(), today, POINTS_PER_WIN, LocalDateTime.now(VANCOUVER)));
+                user.setTotalPoints(user.getTotalPoints() + POINTS_PER_WIN);
+                userRepository.save(user);
+                pointsEarned = POINTS_PER_WIN;
+            }
+        }
+
         return new GuessResultDto(
                 correct,
                 guessed.getFirstName() + " " + guessed.getLastName(),
@@ -57,7 +82,8 @@ public class GuessService {
                 eraHint,
                 nationalityHint,
                 excerpt.getName(),
-                target.getFirstName() + " " + target.getLastName()
+                target.getFirstName() + " " + target.getLastName(),
+                pointsEarned
         );
     }
 

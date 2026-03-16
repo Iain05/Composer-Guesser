@@ -16,7 +16,7 @@ const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, onSele
 
   const filtered = value.trim()
     ? composers.filter((c) => c.name.toLowerCase().includes(value.toLowerCase()))
-    : [];
+    : composers;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

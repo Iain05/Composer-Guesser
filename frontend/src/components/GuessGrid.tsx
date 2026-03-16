@@ -8,6 +8,24 @@ interface GuessGridProps {
   guesses: GuessResult[];
 }
 
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+
+function formatNationality(code: string): string {
+  return regionNames.of(code) ?? code;
+}
+
+const ERA_LABELS: Record<string, string> = {
+  BAROQUE: 'Baroque',
+  CLASSICAL: 'Classical',
+  EARLY_ROMANTIC: 'Early Romantic',
+  LATE_ROMANTIC: 'Late Romantic',
+  MODERN: 'Modern',
+};
+
+function formatEra(era: string): string {
+  return ERA_LABELS[era] ?? era;
+}
+
 function getYearText(birthYear: number, yearHint: GuessResult['yearHint']): string {
   if (yearHint === 'CORRECT') return String(birthYear);
   return yearHint === 'TOO_LOW' ? `${birthYear} ↑` : `${birthYear} ↓`;
@@ -47,8 +65,8 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses }) => {
                 text={getYearText(guess.birthYear, guess.yearHint)}
                 status={guess.yearHint === 'CORRECT' ? 'correct' : 'wrong'}
               />
-              <HintCard text={guess.era} status={guess.eraHint as HintStatus} />
-              <HintCard text={guess.nationality} status={guess.nationalityHint} />
+              <HintCard text={formatEra(guess.era)} status={guess.eraHint as HintStatus} />
+              <HintCard text={formatNationality(guess.nationality)} status={guess.nationalityHint} />
             </div>
           );
         })}
