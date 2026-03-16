@@ -5,16 +5,13 @@ import {
   getAllTimeLeaderboard,
   type LeaderboardPage,
 } from '@src/api/leaderboard';
-import { useAuth } from '@src/context/AuthContext';
-import AuthModal from '@src/components/AuthModal';
+import PageLayout from '@src/components/PageLayout';
 
 type Tab = 'daily' | 'all-time';
 
 const PAGE_SIZE = 50;
 
 const Leaderboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null);
   const [tab, setTab] = useState<Tab>('daily');
   const [page, setPage] = useState(0);
   const [data, setData] = useState<LeaderboardPage | null>(null);
@@ -51,67 +48,12 @@ const Leaderboard: React.FC = () => {
     </Link>
   );
 
-  const authButtons = (
-    <div className="flex items-center gap-2">
-      {user ? (
-        <>
-          <span className="text-slate-800 font-semibold">{user.username}</span>
-          <span className="text-indigo-600 font-bold">{user.totalPoints} pts</span>
-          <button
-            onClick={logout}
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
-          >
-            Sign out
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            onClick={() => setAuthModal('login')}
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => setAuthModal('register')}
-            className="px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all"
-          >
-            <span className="sm:hidden">Register</span>
-            <span className="hidden sm:inline">Create account</span>
-          </button>
-        </>
-      )}
-    </div>
-  );
-
   return (
-    <>
-      {/* Mobile: nav row above header */}
-      <nav className="sm:hidden w-full max-w-2xl flex justify-between items-center mb-6">
-        {backLink}
-        {authButtons}
-      </nav>
-
-      {/* Desktop: 3-col grid with title centred */}
-      <div className="hidden sm:grid w-full grid-cols-[1fr_auto_1fr] items-start mb-8">
-        <div className="flex justify-start">{backLink}</div>
-        <header className="text-center px-6">
-          <h1 className="serif text-4xl font-bold mb-2 text-slate-900">Leaderboard</h1>
-          <p className="text-slate-600 italic">Who's been listening closest?</p>
-        </header>
-        <div className="flex justify-end">{authButtons}</div>
-      </div>
-
-      {/* Mobile: header below nav */}
-      <header className="sm:hidden text-center mb-8 max-w-2xl w-full">
-        <h1 className="serif text-4xl font-bold mb-2 text-slate-900">Leaderboard</h1>
-        <p className="text-slate-600 italic">Who's been listening closest?</p>
-      </header>
-
-      {authModal && (
-        <AuthModal initialMode={authModal} onClose={() => setAuthModal(null)} />
-      )}
-
+    <PageLayout
+      leftSlot={backLink}
+      title="Leaderboard"
+      subtitle="Who's been listening closest?"
+    >
       <main className="max-w-xl w-full flex flex-col gap-6">
         {/* Tab switcher */}
         <div className="flex rounded-xl overflow-hidden border-2 border-slate-200">
@@ -210,7 +152,7 @@ const Leaderboard: React.FC = () => {
           </div>
         )}
       </main>
-    </>
+    </PageLayout>
   );
 };
 

@@ -66,6 +66,8 @@ export function useGameState(excerptId: number | null, token: string | null, onP
     }
   }, [excerptId, isGameOver, token, onPointsEarned]);
 
+  const clearJustFinished = useCallback(() => setJustFinished(false), []);
+
   const resetGame = useCallback(() => {
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
@@ -77,5 +79,5 @@ export function useGameState(excerptId: number | null, token: string | null, onP
 
   const lastGuess = guesses[guesses.length - 1];
 
-  return { guesses, isGameOver, gameKey, won, lastGuess, submitGuess, resetGame, isLoading, justFinished };
+  return { guesses, isGameOver, gameKey, won, lastGuess, submitGuess, resetGame, isLoading, justFinished, clearJustFinished };
 }

@@ -29,13 +29,8 @@ const DailyComposer: React.FC = () => {
     getComposers().then(setComposers).catch(console.error);
   }, []);
 
-  const { guesses, isGameOver, gameKey, won, lastGuess, submitGuess, isLoading, justFinished } =
+  const { guesses, isGameOver, gameKey, won, lastGuess, submitGuess, isLoading, justFinished, clearJustFinished } =
     useGameState(excerptId, token, addPoints);
-  const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    if (justFinished) setShowModal(true);
-  }, [justFinished]);
 
   const leaderboardLink = (
     <Link
@@ -64,12 +59,12 @@ const DailyComposer: React.FC = () => {
 
         <GuessGrid guesses={guesses} />
 
-        {showModal && lastGuess && (
+        {justFinished && lastGuess && (
           <GameStatus
             won={won}
             composerName={lastGuess.targetComposerName}
             pieceTitle={lastGuess.pieceTitle}
-            onClose={() => setShowModal(false)}
+            onClose={clearJustFinished}
           />
         )}
       </main>
