@@ -131,7 +131,7 @@ public class GuessService {
 
         return new GuessResultDto(
                 correct,
-                guessed.getFirstName() + " " + guessed.getLastName(),
+                guessed.getLastName(),
                 guessed.getBirthYear(),
                 guessed.getEra().name(),
                 guessed.getNationality(),
@@ -140,7 +140,7 @@ public class GuessService {
                 eraHint,
                 nationalityHint,
                 excerpt.getName(),
-                target.getFirstName() + " " + target.getLastName(),
+                target.getCompleteName(),
                 pointsEarned
         );
     }
@@ -175,7 +175,7 @@ public class GuessService {
                                 else yearHint = "TOO_HIGH";
                                 return new GuessResultDto(
                                         correct,
-                                        guessed.getFirstName() + " " + guessed.getLastName(),
+                                        guessed.getLastName(),
                                         guessed.getBirthYear(),
                                         guessed.getEra().name(),
                                         guessed.getNationality(),
@@ -184,7 +184,7 @@ public class GuessService {
                                         getEraHint(guessed.getEra(), target.getEra()),
                                         guessed.getNationality().equals(target.getNationality()) ? "correct" : "wrong",
                                         excerpt.getName(),
-                                        target.getFirstName() + " " + target.getLastName(),
+                                        target.getCompleteName(),
                                         0
                                 );
                             })

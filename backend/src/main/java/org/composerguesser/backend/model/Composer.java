@@ -11,8 +11,8 @@ public class Composer {
     @Column(name = "composer_id")
     private Long composerId;
 
-    @Column(name = "first_name", nullable = false)
-    private String firstName;
+    @Column(name = "complete_name", nullable = false)
+    private String completeName;
 
     @Column(name = "last_name", nullable = false)
     private String lastName;
@@ -30,14 +30,11 @@ public class Composer {
     @Column(nullable = false)
     private String nationality;
 
-    @Column(name = "number_of_compositions")
-    private Integer numberOfCompositions;
-
     public Long getComposerId() { return composerId; }
     public void setComposerId(Long composerId) { this.composerId = composerId; }
 
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public String getCompleteName() { return completeName; }
+    public void setCompleteName(String completeName) { this.completeName = completeName; }
 
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
@@ -54,6 +51,5 @@ public class Composer {
     public String getNationality() { return nationality; }
     public void setNationality(String nationality) { this.nationality = nationality; }
 
-    public Integer getNumberOfCompositions() { return numberOfCompositions; }
-    public void setNumberOfCompositions(Integer numberOfCompositions) { this.numberOfCompositions = numberOfCompositions; }
+
 }

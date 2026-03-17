@@ -61,7 +61,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-8 rounded-2xl shadow-sm border border-indigo-200">
+    <div className="bg-surface-warm p-8 rounded-2xl shadow-sm border border-border">
       <audio
         ref={audioRef}
         src={audioUrl ?? undefined}
@@ -70,7 +70,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
         onEnded={() => { setIsPlaying(false); setIsInPlaySession(false); }}
       />
 
-      <div className="flex items-center gap-2 text-indigo-600 mb-4">
+      <div className="flex items-center gap-2 text-primary mb-4">
         <Music className="w-5 h-5" />
         <span className="text-sm font-bold uppercase tracking-wider">Listen to the Mystery</span>
       </div>
@@ -79,7 +79,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
         <button
           onClick={handlePlayPause}
           disabled={!audioUrl}
-          className="row-span-2 self-center flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 text-white transition-all active:scale-95 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="row-span-2 self-center flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-text transition-all active:scale-95 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPlaying ? (
             <Pause className="w-6 h-6 fill-current" />
@@ -90,17 +90,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
 
         <div
           ref={progressBarRef}
-          className="self-end bg-white rounded-full h-2 overflow-hidden shadow-sm cursor-pointer mt-4"
+          className="self-end bg-border rounded-full h-2 overflow-hidden shadow-sm cursor-pointer mt-4"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
         >
           <div
-            className="h-full bg-indigo-600 transition-all duration-75"
+            className="h-full bg-primary transition-all duration-75"
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        <div className="flex justify-between text-xs text-slate-600 mt-1">
+        <div className="flex justify-between text-xs text-ink-muted mt-1">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>

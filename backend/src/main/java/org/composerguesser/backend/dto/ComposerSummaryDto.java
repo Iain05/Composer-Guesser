@@ -5,9 +5,9 @@ public class ComposerSummaryDto {
     private Long composerId;
     private String name;
 
-    public ComposerSummaryDto(Long composerId, String firstName, String lastName) {
+    public ComposerSummaryDto(Long composerId, String completeName) {
         this.composerId = composerId;
-        this.name = firstName + " " + lastName;
+        this.name = completeName;
     }
 
     public Long getComposerId() { return composerId; }

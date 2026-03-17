@@ -30,6 +30,9 @@ public class Excerpt {
     @Column(name = "work_number")
     private Integer workNumber;
 
+    @Column(name = "work_id")
+    private Long workId;
+
     @Column
     private String description;
 
@@ -59,6 +62,9 @@ public class Excerpt {
 
     public Integer getWorkNumber() { return workNumber; }
     public void setWorkNumber(Integer workNumber) { this.workNumber = workNumber; }
+
+    public Long getWorkId() { return workId; }
+    public void setWorkId(Long workId) { this.workId = workId; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

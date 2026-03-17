@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@src/context/AuthContext';
 import AuthModal from '@src/components/AuthModal';
+import ThemeMenu from '@src/components/ThemeMenu';
 
 interface PageLayoutProps {
   leftSlot: React.ReactNode;
@@ -15,13 +16,14 @@ const PageLayout: React.FC<PageLayoutProps> = ({ leftSlot, title, subtitle, chil
 
   const authButtons = (
     <div className="flex items-center gap-2">
+      <ThemeMenu />
       {user ? (
         <>
-          <span className="text-slate-800 font-semibold">{user.username}</span>
-          <span className="text-indigo-600 font-bold">{user.totalPoints} pts</span>
+          <span className="text-ink font-semibold">{user.username}</span>
+          <span className="text-primary font-bold">{user.totalPoints} pts</span>
           <button
             onClick={logout}
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
+            className="px-3 py-2 bg-surface border border-border text-ink-muted text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-border-hover transition-all"
           >
             Sign out
           </button>
@@ -30,13 +32,13 @@ const PageLayout: React.FC<PageLayoutProps> = ({ leftSlot, title, subtitle, chil
         <>
           <button
             onClick={() => setAuthModal('login')}
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
+            className="px-3 py-2 bg-surface border border-border text-ink text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-border-hover transition-all"
           >
             Sign in
           </button>
           <button
             onClick={() => setAuthModal('register')}
-            className="px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all"
+            className="px-3 py-2 bg-primary text-primary-text text-sm font-semibold rounded-xl shadow-sm hover:bg-primary-hover hover:shadow-md transition-all"
           >
             <span className="sm:hidden">Register</span>
             <span className="hidden sm:inline">Create account</span>
@@ -48,8 +50,8 @@ const PageLayout: React.FC<PageLayoutProps> = ({ leftSlot, title, subtitle, chil
 
   const header = (
     <>
-      <h1 className="serif text-4xl font-bold mb-2 text-slate-900">{title}</h1>
-      <p className="text-slate-600 italic">{subtitle}</p>
+      <h1 className="serif text-4xl mb-2 mt-2 text-ink">{title}</h1>
+      <p className="text-ink-muted italic">{subtitle}</p>
     </>
   );
 

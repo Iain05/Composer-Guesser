@@ -56,19 +56,19 @@ const ComposerSearch: React.FC<ComposerSearchProps> = ({ value, onChange, onSele
           disabled={disabled}
           placeholder="Search composer..."
           autoComplete="off"
-          className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-all pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-4 py-3 bg-surface text-ink placeholder:text-ink-subtle border-2 border-border rounded-xl focus:border-primary focus:outline-none transition-all pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
         />
-        <Search className="absolute right-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
+        <Search className="absolute right-3 top-3.5 w-5 h-5 text-ink-subtle pointer-events-none" />
       </div>
 
       {showDropdown && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+        <div className="absolute z-50 w-full mt-2 bg-surface border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
           {filtered.map((c) => (
             <button
               key={c.composerId}
               type="button"
               onMouseDown={() => handleSelect(c)}
-              className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm border-b border-slate-100 last:border-0"
+              className="w-full text-left px-4 py-2 hover:bg-canvas text-ink text-sm border-b border-border last:border-0"
             >
               {c.name}
             </button>

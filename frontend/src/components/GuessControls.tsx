@@ -49,7 +49,7 @@ const GuessControls: React.FC<GuessControlsProps> = ({ disabled, composers, onSu
       <button
         onClick={handleSubmit}
         disabled={disabled}
-        className={`w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${shake ? 'bg-red-500 hover:bg-red-500' : ''}`}
+        className={`w-full py-3 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${shake ? 'bg-red-500 hover:bg-red-500' : ''}`}
       >
         Submit Guess
       </button>

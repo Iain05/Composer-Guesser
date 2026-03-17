@@ -42,7 +42,7 @@ const Leaderboard: React.FC = () => {
   const backLink = (
     <Link
       to="/"
-      className="px-3 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
+      className="px-3 py-2 bg-surface border border-border text-ink-muted text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-border-hover transition-all"
     >
       ← Back to game
     </Link>
@@ -56,13 +56,13 @@ const Leaderboard: React.FC = () => {
     >
       <main className="max-w-xl w-full flex flex-col gap-6">
         {/* Tab switcher */}
-        <div className="flex rounded-xl overflow-hidden border-2 border-slate-200">
+        <div className="flex rounded-xl overflow-hidden border-2 border-border">
           <button
             onClick={() => switchTab('daily')}
             className={`flex-1 py-2.5 font-semibold transition-colors ${
               tab === 'daily'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white text-slate-600 hover:bg-slate-50'
+                ? 'bg-primary text-primary-text'
+                : 'bg-surface text-ink-muted hover:bg-canvas'
             }`}
           >
             Today
@@ -71,8 +71,8 @@ const Leaderboard: React.FC = () => {
             onClick={() => switchTab('all-time')}
             className={`flex-1 py-2.5 font-semibold transition-colors ${
               tab === 'all-time'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white text-slate-600 hover:bg-slate-50'
+                ? 'bg-primary text-primary-text'
+                : 'bg-surface text-ink-muted hover:bg-canvas'
             }`}
           >
             All-Time
@@ -80,22 +80,22 @@ const Leaderboard: React.FC = () => {
         </div>
 
         {/* Entries */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
           {loading && (
-            <p className="text-center text-slate-500 py-10">Loading...</p>
+            <p className="text-center text-ink-muted py-10">Loading...</p>
           )}
           {error && (
             <p className="text-center text-red-500 py-10">{error}</p>
           )}
           {!loading && !error && data?.content.length === 0 && (
-            <p className="text-center text-slate-400 py-10 italic">
+            <p className="text-center text-ink-subtle py-10 italic">
               No scores yet — be the first!
             </p>
           )}
           {!loading && !error && data && data.content.length > 0 && (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-100 text-slate-400 text-sm font-medium">
+                <tr className="border-b border-border text-ink-subtle text-sm font-medium">
                   <th className="text-left py-3 px-5 w-10">#</th>
                   <th className="text-left py-3 px-5">Player</th>
                   <th className="text-right py-3 px-5">Points</th>
@@ -108,17 +108,17 @@ const Leaderboard: React.FC = () => {
                   return (
                     <tr
                       key={entry.username}
-                      className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"
+                      className="border-b border-border last:border-0 hover:bg-canvas transition-colors"
                     >
-                      <td className="py-3.5 px-5 text-slate-400 font-medium text-sm">
+                      <td className="py-3.5 px-5 text-ink-subtle font-medium text-sm">
                         <span className="inline-block w-6 text-center">
                           {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
                         </span>
                       </td>
-                      <td className={`py-3.5 px-5 font-semibold ${isTop3 ? 'text-slate-800' : 'text-slate-700'}`}>
+                      <td className={`py-3.5 px-5 font-semibold ${isTop3 ? 'text-ink' : 'text-ink-muted'}`}>
                         {entry.username}
                       </td>
-                      <td className="py-3.5 px-5 text-right font-bold text-indigo-600">
+                      <td className="py-3.5 px-5 text-right font-bold text-primary">
                         {entry.points}
                       </td>
                     </tr>
@@ -135,17 +135,17 @@ const Leaderboard: React.FC = () => {
             <button
               onClick={() => setPage((p) => p - 1)}
               disabled={data.first}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all"
+              className="px-4 py-2 bg-surface border border-border text-ink-muted text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-border-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all"
             >
               ← Previous
             </button>
-            <span className="text-slate-500 text-sm">
+            <span className="text-ink-muted text-sm">
               Page {data.number + 1} of {data.totalPages}
             </span>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={data.last}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all"
+              className="px-4 py-2 bg-surface border border-border text-ink-muted text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-border-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all"
             >
               Next →
             </button>

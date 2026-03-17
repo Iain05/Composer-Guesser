@@ -13,5 +13,9 @@
     <include file="db/changelog/changes/006-create-tbl-user-point.xml"/>
     <include file="db/changelog/changes/007-alter-user-tables.xml"/>
     <include file="db/changelog/changes/008-create-tbl-user-guess.xml"/>
+    <include file="db/changelog/changes/009-alter-tbl-composer.xml"/>
+    <include file="db/changelog/changes/010-create-tbl-composer-work.xml"/>
+    <include file="db/changelog/changes/011-alter-tbl-excerpt-add-work-id.xml"/>
+    <include file="db/changelog/changes/012-alter-era-enum.xml"/>
 
 </databaseChangeLog>

@@ -31,22 +31,22 @@ const GameStatus: React.FC<GameStatusProps> = ({ won, composerName, pieceTitle, 
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className={`modal-card bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl text-center ${closing ? 'closing' : ''}`}>
+      <div className={`modal-card bg-surface rounded-2xl p-8 w-full max-w-sm shadow-2xl text-center ${closing ? 'closing' : ''}`}>
         {won ? (
           <>
             <div className="text-5xl mb-4">🎼</div>
-            <h3 className="serif text-3xl font-bold mb-3 text-green-600">Bravo Maestro!</h3>
-            <p className="text-slate-600">
-              You correctly identified <span className="font-semibold text-slate-800">{composerName}</span>'s{' '}
+            <h3 className="serif text-3xl mb-3 text-green-600">Bravo Maestro!</h3>
+            <p className="text-ink-muted">
+              You correctly identified <span className="font-semibold text-ink">{composerName}</span>'s{' '}
               <span className="italic">{pieceTitle}</span>.
             </p>
           </>
         ) : (
           <>
             <div className="text-5xl mb-4">🎻</div>
-            <h3 className="serif text-3xl font-bold mb-3 text-red-500">Encore Needed...</h3>
-            <p className="text-slate-600">
-              It was actually <span className="font-semibold text-slate-800">{composerName}</span>'s{' '}
+            <h3 className="serif text-3xl mb-3 text-red-500">Encore Needed...</h3>
+            <p className="text-ink-muted">
+              It was actually <span className="font-semibold text-ink">{composerName}</span>'s{' '}
               <span className="italic">{pieceTitle}</span>.
             </p>
           </>

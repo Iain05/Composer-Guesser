@@ -21,7 +21,7 @@ public class ComposerController {
     @GetMapping
     public List<ComposerSummaryDto> getAllComposers() {
         return composerRepository.findAll().stream()
-                .map(c -> new ComposerSummaryDto(c.getComposerId(), c.getFirstName(), c.getLastName()))
+                .map(c -> new ComposerSummaryDto(c.getComposerId(), c.getCompleteName()))
                 .toList();
     }
 

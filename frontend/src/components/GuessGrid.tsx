@@ -18,7 +18,9 @@ const ERA_LABELS: Record<string, string> = {
   BAROQUE: 'Baroque',
   CLASSICAL: 'Classical',
   EARLY_ROMANTIC: 'Early Romantic',
+  ROMANTIC: 'Romantic',
   LATE_ROMANTIC: 'Late Romantic',
+  _20TH_CENTURY: '20th Century',
   MODERN: 'Modern',
 };
 
@@ -35,8 +37,8 @@ const COLUMNS = ['Composer', 'Birth Year', 'Era', 'Nationality'];
 
 const GuessGrid: React.FC<GuessGridProps> = ({ guesses }) => {
   return (
-    <div className="mt-4">
-      <div className="grid grid-cols-4 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+    <div className="mt-2">
+      <div className="grid grid-cols-4 gap-2 text-[10px] font-bold text-ink-subtle uppercase tracking-widest text-center">
         {COLUMNS.map((col) => (
           <div key={col}>{col}</div>
         ))}
@@ -50,17 +52,15 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses }) => {
             return (
               <div key={i} className="grid grid-cols-4 gap-2">
                 {Array.from({ length: 4 }, (_, j) => (
-                  <div key={j} className="guess-card bg-white border-2 border-slate-100" />
+                  <div key={j} className="guess-card bg-surface border-2 border-border" />
                 ))}
               </div>
             );
           }
 
-          const lastName = guess.composerName.split(' ').slice(-1)[0];
-
           return (
             <div key={i} className="grid grid-cols-4 gap-2">
-              <HintCard text={lastName} status={guess.composerHint} />
+              <HintCard text={guess.composerName} status={guess.composerHint} />
               <HintCard
                 text={getYearText(guess.birthYear, guess.yearHint)}
                 status={guess.yearHint === 'CORRECT' ? 'correct' : 'wrong'}

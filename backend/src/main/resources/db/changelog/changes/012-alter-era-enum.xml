@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Reorder era_type and add ROMANTIC + 20TH_CENTURY.
+        PostgreSQL does not support reordering enum values in-place, so we convert
+        the column to VARCHAR, drop the old type, recreate it in the correct
+        chronological order, then cast back.
+    -->
+    <changeSet id="012-alter-era-enum" author="composerguesser">
+        <sql>ALTER TABLE tbl_composer ALTER COLUMN era TYPE VARCHAR(50)</sql>
+        <sql>DROP TYPE era_type</sql>
+        <sql>CREATE TYPE era_type AS ENUM (
+            'BAROQUE',
+            'CLASSICAL',
+            'EARLY_ROMANTIC',
+            'ROMANTIC',
+            'LATE_ROMANTIC',
+            '_20TH_CENTURY',
+            'MODERN'
+        )</sql>
+        <sql>ALTER TABLE tbl_composer ALTER COLUMN era TYPE era_type USING era::era_type</sql>
+    </changeSet>
+
+</databaseChangeLog>
