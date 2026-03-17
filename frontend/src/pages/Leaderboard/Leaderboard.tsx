@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   getDailyLeaderboard,
   getAllTimeLeaderboard,
+  getMyRank,
   type LeaderboardPage,
+  type MyRank,
 } from '@src/api/leaderboard';
+import { useAuth } from '@src/context/AuthContext';
 import PageLayout from '@src/components/PageLayout';
 
 type Tab = 'daily' | 'all-time';
@@ -12,11 +15,18 @@ type Tab = 'daily' | 'all-time';
 const PAGE_SIZE = 50;
 
 const Leaderboard: React.FC = () => {
+  const { token } = useAuth();
   const [tab, setTab] = useState<Tab>('daily');
   const [page, setPage] = useState(0);
   const [data, setData] = useState<LeaderboardPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [myRank, setMyRank] = useState<MyRank | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    getMyRank(token).then(setMyRank).catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     setLoading(true);
@@ -79,6 +89,45 @@ const Leaderboard: React.FC = () => {
           </button>
         </div>
 
+        {/* My rank card */}
+        {myRank && (
+          <div className="rounded-2xl border-2 border-primary/40 bg-primary/5 px-5 py-4 flex items-center gap-4 shadow-sm">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-primary/70 uppercase tracking-wider mb-0.5">Your ranking</p>
+              <p className="font-bold text-ink text-lg truncate">{myRank.username}</p>
+            </div>
+            <div className="flex gap-6 shrink-0">
+              {myRank.streak >= 3 && (
+                <>
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-ink-subtle mb-0.5">Streak</p>
+                    <p className="text-2xl font-extrabold text-orange-500 leading-none">🔥{myRank.streak}</p>
+                    <p className="text-xs text-ink-muted mt-0.5">days</p>
+                  </div>
+                  <div className="w-px bg-border" />
+                </>
+              )}
+              <div className="text-center">
+                <p className="text-xs font-medium text-ink-subtle mb-0.5">Today</p>
+                {myRank.dailyRank != null ? (
+                  <>
+                    <p className="text-2xl font-extrabold text-primary leading-none">#{myRank.dailyRank}</p>
+                    <p className="text-xs text-ink-muted mt-0.5">{myRank.dailyPoints} pts</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-ink-subtle italic">—</p>
+                )}
+              </div>
+              <div className="w-px bg-border" />
+              <div className="text-center">
+                <p className="text-xs font-medium text-ink-subtle mb-0.5">All-Time</p>
+                <p className="text-2xl font-extrabold text-primary leading-none">#{myRank.allTimeRank}</p>
+                <p className="text-xs text-ink-muted mt-0.5">{myRank.allTimePoints} pts</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Entries */}
         <div className="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
           {loading && (
@@ -116,7 +165,12 @@ const Leaderboard: React.FC = () => {
                         </span>
                       </td>
                       <td className={`py-3.5 px-5 font-semibold ${isTop3 ? 'text-ink' : 'text-ink-muted'}`}>
-                        {entry.username}
+                        <span>{entry.username}</span>
+                        {entry.streak >= 3 && (
+                          <span className="ml-2 text-xs font-bold text-orange-500 bg-orange-500/10 px-1.5 py-0.5 rounded-md">
+                            🔥{entry.streak}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3.5 px-5 text-right font-bold text-primary">
                         {entry.points}

@@ -29,6 +29,9 @@ public class User implements UserDetails {
     private int totalPoints;
 
     @Column(nullable = false)
+    private int currentStreak;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Override
@@ -55,6 +58,8 @@ public class User implements UserDetails {
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public int getTotalPoints() { return totalPoints; }
     public void setTotalPoints(int totalPoints) { this.totalPoints = totalPoints; }
+    public int getCurrentStreak() { return currentStreak; }
+    public void setCurrentStreak(int currentStreak) { this.currentStreak = currentStreak; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

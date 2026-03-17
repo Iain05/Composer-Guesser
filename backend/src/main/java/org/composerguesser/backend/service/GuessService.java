@@ -123,6 +123,8 @@ public class GuessService {
                     int points = 11 - guessNumber;
                     userPointRepository.save(new UserPoint(user.getUserId(), today, points, LocalDateTime.now(VANCOUVER)));
                     user.setTotalPoints(user.getTotalPoints() + points);
+                    boolean hadYesterday = userPointRepository.existsByUserIdAndExcerptDayDate(user.getUserId(), today.minusDays(1));
+                    user.setCurrentStreak(hadYesterday ? user.getCurrentStreak() + 1 : 1);
                     userRepository.save(user);
                     pointsEarned = points;
                 }

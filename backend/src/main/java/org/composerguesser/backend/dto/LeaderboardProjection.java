@@ -7,4 +7,5 @@ package org.composerguesser.backend.dto;
 public interface LeaderboardProjection {
     String getUsername();
     int getPoints();
+    int getStreak();
 }
