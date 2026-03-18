@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageLayout from '@src/components/PageLayout';
-import WaveformTrimmer, { fmt, MIN_CLIP_SECS } from '@src/components/WaveformTrimmer';
+import WaveformTrimmer, { fmt, MIN_CLIP_SECS, MAX_CLIP_SECS } from '@src/components/WaveformTrimmer';
 import ExcerptMetadataForm from '@src/components/ExcerptMetadataForm';
+import SubmitExcerptModal from '@src/components/SubmitExcerptModal';
+import type { SubmitState } from '@src/components/SubmitExcerptModal';
 import { getComposers } from '@src/api/composer';
 import type { ComposerSummary, ComposerWorkSummary } from '@src/api/composer';
+import { submitExcerpt } from '@src/api/excerpt';
+import { exportWav } from '@src/utils/audioExport';
+import { useAuth } from '@src/context/AuthContext';
 
 const SubmitExcerpt: React.FC = () => {
+  const { token } = useAuth();
+
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +26,11 @@ const SubmitExcerpt: React.FC = () => {
   const [selectedComposer, setSelectedComposer] = useState<ComposerSummary | null>(null);
   const [selectedWork, setSelectedWork] = useState<ComposerWorkSummary | null>(null);
   const [excerptTitle, setExcerptTitle] = useState('');
+  const [excerptCompositionYear, setExcerptCompositionYear] = useState<number | null>(null);
   const [excerptDescription, setExcerptDescription] = useState('');
+
+  const [modalState, setModalState] = useState<SubmitState | null>(null);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     getComposers().then(setComposers).catch(() => {});
@@ -68,6 +79,54 @@ const SubmitExcerpt: React.FC = () => {
     if (file) loadFile(file);
   }
 
+  const clipDuration = endTime - startTime;
+  const clipValid = clipDuration >= MIN_CLIP_SECS && clipDuration <= MAX_CLIP_SECS;
+  const canSubmit = !!audioBuffer && !!selectedComposer && excerptTitle.trim().length > 0 && clipValid;
+
+  function handleSubmitClick() {
+    if (!canSubmit) return;
+    setModalState('confirm');
+  }
+
+  async function handleConfirm() {
+    if (!audioBuffer || !selectedComposer || !token) return;
+    setModalState('uploading');
+    try {
+      const wav = exportWav(audioBuffer, startTime, endTime);
+      await submitExcerpt(
+        wav,
+        selectedComposer.composerId,
+        selectedWork?.workId ?? null,
+        excerptTitle.trim(),
+        excerptCompositionYear,
+        excerptDescription,
+        token,
+      );
+      setModalState('success');
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Something went wrong.');
+      setModalState('error');
+    }
+  }
+
+  function handleRetry() {
+    setModalState('confirm');
+  }
+
+  function handleModalClose() {
+    if (modalState === 'success') {
+      // Reset the whole form after a successful submission
+      setAudioBuffer(null);
+      setFileName('');
+      setSelectedComposer(null);
+      setSelectedWork(null);
+      setExcerptTitle('');
+      setExcerptDescription('');
+    }
+    setModalState(null);
+    setSubmitError('');
+  }
+
   const duration = audioBuffer?.duration ?? 0;
 
   const backLink = (
@@ -90,7 +149,7 @@ const SubmitExcerpt: React.FC = () => {
         Excerpt submission is only available on desktop.
       </div>
 
-      <main className="hidden sm:flex max-w-3xl w-full flex-col gap-8">
+      <main className="hidden sm:flex max-w-3xl w-full flex-col gap-6">
         {/* ── Upload drop zone ── */}
         {!audioBuffer && (
           <div>
@@ -130,7 +189,7 @@ const SubmitExcerpt: React.FC = () => {
                       </span>
                     </p>
                   </div>
-                  <p className="text-ink-subtle text-xs">MP3 · WAV · FLAC · M4A · OGG · minimum 1:00</p>
+                  <p className="text-ink-subtle text-xs">MP3 · WAV · FLAC · M4A · OGG · 1:00 – 2:00</p>
                 </>
               )}
             </label>
@@ -140,11 +199,11 @@ const SubmitExcerpt: React.FC = () => {
           </div>
         )}
 
-        {/* ── Trimmer ── */}
+        {/* ── Trimmer + form ── */}
         {audioBuffer && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             {/* File info bar */}
-            <div className="flex items-center justify-between pb-5 border-b border-border">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-lg flex-shrink-0">
                   🎵
@@ -165,8 +224,8 @@ const SubmitExcerpt: React.FC = () => {
             {/* Waveform trimmer */}
             <div>
               <h2 className="font-semibold text-ink mb-1">Trim to excerpt</h2>
-              <p className="text-ink-muted text-sm mb-4">
-                Select at least 1:00 of audio. Drag the handles, or click the timestamps to enter a precise time.
+              <p className="text-ink-muted text-sm mb-3">
+                Select between 1:00 and 2:00 of audio. Drag the handles, or click the timestamps to enter a precise time.
               </p>
               <WaveformTrimmer
                 audioBuffer={audioBuffer}
@@ -178,7 +237,6 @@ const SubmitExcerpt: React.FC = () => {
               />
             </div>
 
-            {/* Divider */}
             <div className="border-t border-border" />
 
             {/* Metadata form */}
@@ -187,11 +245,40 @@ const SubmitExcerpt: React.FC = () => {
               onComposerChange={setSelectedComposer}
               onWorkChange={setSelectedWork}
               onTitleChange={setExcerptTitle}
+              onCompositionYearChange={setExcerptCompositionYear}
               onDescriptionChange={setExcerptDescription}
             />
+
+            {/* Submit */}
+            <div className="flex justify-center pt-1">
+              <div className="relative group">
+                <button
+                  onClick={handleSubmitClick}
+                  disabled={!canSubmit || !token}
+                  className="px-8 py-3 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                >
+                  Submit excerpt
+                </button>
+                {(!token || !clipValid) && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-ink text-canvas text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    {!token ? 'You must be logged in to submit' : 'Excerpt must be between 1:00 and 2:00'}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </main>
+
+      {modalState && (
+        <SubmitExcerptModal
+          state={modalState}
+          errorMessage={submitError}
+          onConfirm={handleConfirm}
+          onRetry={handleRetry}
+          onClose={handleModalClose}
+        />
+      )}
     </PageLayout>
   );
 };

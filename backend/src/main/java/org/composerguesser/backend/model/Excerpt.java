@@ -42,6 +42,9 @@ public class Excerpt {
     @Column(name = "times_used", nullable = false)
     private Integer timesUsed;
 
+    @Column(name = "is_draft", nullable = false)
+    private boolean isDraft = true;
+
     public Long getExcerptId() { return excerptId; }
     public void setExcerptId(Long excerptId) { this.excerptId = excerptId; }
 
@@ -74,4 +77,6 @@ public class Excerpt {
 
     public Integer getTimesUsed() { return timesUsed; }
     public void setTimesUsed(Integer timesUsed) { this.timesUsed = timesUsed; }
+    public boolean isDraft() { return isDraft; }
+    public void setDraft(boolean isDraft) { this.isDraft = isDraft; }
 }

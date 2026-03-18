@@ -13,6 +13,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export const MIN_CLIP_SECS = 60;
+export const MAX_CLIP_SECS = 120;
 
 export function fmt(secs: number): string {
   const m = Math.floor(secs / 60);
@@ -81,10 +82,8 @@ export default function WaveformTrimmer({
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Pre-computed peaks: [{ min, max }] per pixel column — computed once per audioBuffer
   const peaksRef = useRef<{ min: number; max: number }[]>([]);
 
-  // DOM refs for zero-React-render imperative updates during drag
   const handleLeftRef  = useRef<HTMLDivElement>(null);
   const handleRightRef = useRef<HTMLDivElement>(null);
   const dimLeftRef     = useRef<HTMLDivElement>(null);
@@ -92,14 +91,15 @@ export default function WaveformTrimmer({
   const accentTopRef   = useRef<HTMLDivElement>(null);
   const accentBotRef   = useRef<HTMLDivElement>(null);
   const playheadDivRef = useRef<HTMLDivElement>(null);
+  const clipDurRef     = useRef<HTMLSpanElement>(null);
 
-  // Live values during drag — kept in sync with props when not dragging
+  // Live trim values — updated imperatively during drag
   const liveStartRef = useRef(startTime);
   const liveEndRef   = useRef(endTime);
   liveStartRef.current = startTime;
   liveEndRef.current   = endTime;
 
-  // Increments when <html> class changes (theme toggle) to force a canvas redraw
+  // Increments on theme change to force canvas redraw
   const [themeVersion, setThemeVersion] = useState(0);
   useEffect(() => {
     const observer = new MutationObserver(() => setThemeVersion(v => v + 1));
@@ -108,21 +108,26 @@ export default function WaveformTrimmer({
   }, []);
 
   // ── Playback refs ──────────────────────────────────────────────────────────
-  const audioCtxRef   = useRef<AudioContext | null>(null);
-  const sourceRef     = useRef<AudioBufferSourceNode | null>(null);
-  const playStartedAt = useRef(0);
-  const playOffset    = useRef(0);
-  const rafRef        = useRef(0);
-  const playheadRef   = useRef(startTime);
-  const wasPlayingRef = useRef(false);
+  const audioCtxRef    = useRef<AudioContext | null>(null);
+  const sourceRef      = useRef<AudioBufferSourceNode | null>(null);
+  const playStartedAt  = useRef(0);
+  const playOffset     = useRef(0);
+  const rafRef         = useRef(0);
+  const playheadRef    = useRef(startTime);
+  const wasPlayingRef  = useRef(false);
+  // Lets the [startTime,endTime] effect know a handle drag just ended with
+  // a restart request so it should not kill the playback we're about to start.
+  const suppressStopRef = useRef(false);
 
   const [isPlaying,    setIsPlaying]    = useState(false);
   const [playheadTime, setPlayheadTime] = useState(startTime);
+  // Keep a ref in sync so pointer-event handlers can read it without stale closures
+  const isPlayingRef = useRef(false);
+  isPlayingRef.current = isPlaying;
 
   function setPlayhead(t: number) {
     playheadRef.current = t;
     setPlayheadTime(t);
-    // Also move the playhead DOM element directly for instant feedback
     if (playheadDivRef.current)
       playheadDivRef.current.style.left = `${(t / duration) * 100}%`;
   }
@@ -149,7 +154,7 @@ export default function WaveformTrimmer({
     drawCanvas(startTime, endTime);
   }, [audioBuffer]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Canvas draw — O(W) because peaks are pre-computed ─────────────────────
+  // ── Canvas draw ────────────────────────────────────────────────────────────
   function drawCanvas(sT: number, eT: number) {
     const canvas    = canvasRef.current;
     const container = containerRef.current;
@@ -159,7 +164,6 @@ export default function WaveformTrimmer({
     if (W === 0 || H === 0) return;
 
     const dpr = window.devicePixelRatio || 1;
-    // setTransform resets the matrix without clearing — but we clear manually below
     canvas.width  = W * dpr;
     canvas.height = H * dpr;
     const ctx = canvas.getContext('2d')!;
@@ -181,7 +185,6 @@ export default function WaveformTrimmer({
     }
   }
 
-  // Redraw when props change (after drag ends) or theme changes
   useEffect(() => {
     drawCanvas(startTime, endTime);
   }, [startTime, endTime, themeVersion]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -202,11 +205,23 @@ export default function WaveformTrimmer({
       accentBotRef.current.style.left  = `${sPct}%`;
       accentBotRef.current.style.right = `${100 - ePct}%`;
     }
+    // Live-update clip duration display
+    const clipSecs = eT - sT;
+    if (clipDurRef.current) {
+      clipDurRef.current.textContent = fmt(clipSecs);
+      clipDurRef.current.className = `font-mono text-xs font-semibold ${clipSecs < MIN_CLIP_SECS || clipSecs > MAX_CLIP_SECS ? 'text-red-400' : 'text-ink-subtle'}`;
+    }
     drawCanvas(sT, eT);
   }
 
-  // ── Reset playhead when trim edges change ─────────────────────────────────
+  // ── Stop playback and reset playhead when trim props change (e.g. TimeInput)
+  // Skipped when a handle drag just ended with a restart so we don't kill the
+  // playback we're about to start.
   useEffect(() => {
+    if (suppressStopRef.current) {
+      suppressStopRef.current = false;
+      return;
+    }
     cancelAnimationFrame(rafRef.current);
     try { sourceRef.current?.stop(); } catch { /* already stopped */ }
     setIsPlaying(false);
@@ -235,20 +250,24 @@ export default function WaveformTrimmer({
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(ctx.destination);
-    source.start(0, fromTime, endTime - fromTime);
+
+    // Always use live refs so a restart after a drag uses the latest bounds
+    const playEnd = liveEndRef.current;
+    source.start(0, fromTime, playEnd - fromTime);
     sourceRef.current     = source;
     playStartedAt.current = ctx.currentTime;
     playOffset.current    = fromTime;
     setIsPlaying(true);
 
-    const sessionEnd   = endTime;
-    const sessionStart = startTime;
     function tick() {
       const pos = playOffset.current + ((audioCtxRef.current?.currentTime ?? 0) - playStartedAt.current);
-      if (pos >= sessionEnd) {
+      // Use live refs so moving handles mid-playback is immediately respected
+      const curEnd   = liveEndRef.current;
+      const curStart = liveStartRef.current;
+      if (pos >= curEnd || pos < curStart) {
         cancelAnimationFrame(rafRef.current);
         setIsPlaying(false);
-        setPlayhead(sessionStart);
+        setPlayhead(curStart);
         return;
       }
       setPlayhead(pos);
@@ -265,12 +284,27 @@ export default function WaveformTrimmer({
     return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration;
   }
 
-  // ── Derived layout (initial render only — drags bypass these via applyLayout) ─
+  // ── Shared handle drag logic ───────────────────────────────────────────────
+  function handleDragStart() {
+    wasPlayingRef.current = isPlayingRef.current;
+    if (isPlayingRef.current) { stopPlayback(); setIsPlaying(false); }
+  }
+
+  function handleDragEnd(restartFrom: number) {
+    if (wasPlayingRef.current) {
+      // Tell the [startTime,endTime] effect not to kill this playback
+      suppressStopRef.current = true;
+      startPlayback(restartFrom);
+    }
+  }
+
+  // ── Derived layout (initial render; drags bypass via applyLayout) ──────────
   const startPct     = (startTime    / duration) * 100;
   const endPct       = (endTime      / duration) * 100;
   const headPct      = (playheadTime / duration) * 100;
   const clipDuration = endTime - startTime;
   const tooShort     = clipDuration < MIN_CLIP_SECS;
+  const tooLong      = clipDuration > MAX_CLIP_SECS;
   const TAB_W = 16;
   const TAB_H = 5;
 
@@ -284,8 +318,8 @@ export default function WaveformTrimmer({
           if (!containerRef.current) return;
           e.currentTarget.setPointerCapture(e.pointerId);
           e.currentTarget.style.cursor = 'grabbing';
-          wasPlayingRef.current = isPlaying;
-          if (isPlaying) { stopPlayback(); setIsPlaying(false); }
+          wasPlayingRef.current = isPlayingRef.current;
+          if (isPlayingRef.current) { stopPlayback(); setIsPlaying(false); }
           const t = Math.max(liveStartRef.current, Math.min(liveEndRef.current, timeFromPointer(e)));
           playheadRef.current = t;
           if (playheadDivRef.current) playheadDivRef.current.style.left = `${(t / duration) * 100}%`;
@@ -329,23 +363,34 @@ export default function WaveformTrimmer({
                style={{ borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: '5px solid currentColor' }} />
         </div>
 
-        {/* ── Left trim handle — tabs point right (inward) ── */}
+        {/* ── Left trim handle ── */}
         <div
           ref={handleLeftRef}
           className="absolute inset-y-0 w-8 cursor-col-resize z-20 touch-none"
           style={{ left: `calc(${startPct}% - 16px)` }}
-          onPointerDown={e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); }}
+          onPointerDown={e => {
+            e.preventDefault(); e.stopPropagation();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            handleDragStart();
+          }}
           onPointerMove={e => {
             if (!e.currentTarget.hasPointerCapture(e.pointerId) || !containerRef.current) return;
             const rect = containerRef.current.getBoundingClientRect();
             const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration;
             const clamped = Math.max(0, Math.min(t, liveEndRef.current - MIN_CLIP_SECS));
             liveStartRef.current = clamped;
+            // Clamp playhead to new start if it fell behind
+            if (playheadRef.current < clamped) {
+              playheadRef.current = clamped;
+              if (playheadDivRef.current) playheadDivRef.current.style.left = `${(clamped / duration) * 100}%`;
+            }
             applyLayout(clamped, liveEndRef.current);
           }}
           onPointerUp={e => {
             e.currentTarget.releasePointerCapture(e.pointerId);
+            const restartFrom = Math.max(playheadRef.current, liveStartRef.current);
             onStartChange(liveStartRef.current);
+            handleDragEnd(restartFrom);
           }}
         >
           <div className="absolute inset-y-0 w-[2px] left-1/2 -translate-x-1/2 bg-primary shadow-[0_0_8px_rgba(201,168,76,0.5)]" />
@@ -355,23 +400,34 @@ export default function WaveformTrimmer({
                style={{ bottom: 0, left: '50%', marginLeft: -1, width: TAB_W, height: TAB_H }} />
         </div>
 
-        {/* ── Right trim handle — tabs point left (inward) ── */}
+        {/* ── Right trim handle ── */}
         <div
           ref={handleRightRef}
           className="absolute inset-y-0 w-8 cursor-col-resize z-20 touch-none"
           style={{ left: `calc(${endPct}% - 16px)` }}
-          onPointerDown={e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); }}
+          onPointerDown={e => {
+            e.preventDefault(); e.stopPropagation();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            handleDragStart();
+          }}
           onPointerMove={e => {
             if (!e.currentTarget.hasPointerCapture(e.pointerId) || !containerRef.current) return;
             const rect = containerRef.current.getBoundingClientRect();
             const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration;
             const clamped = Math.min(duration, Math.max(t, liveStartRef.current + MIN_CLIP_SECS));
             liveEndRef.current = clamped;
+            // Clamp playhead to new end if it ran past
+            if (playheadRef.current > clamped) {
+              playheadRef.current = clamped;
+              if (playheadDivRef.current) playheadDivRef.current.style.left = `${(clamped / duration) * 100}%`;
+            }
             applyLayout(liveStartRef.current, clamped);
           }}
           onPointerUp={e => {
             e.currentTarget.releasePointerCapture(e.pointerId);
+            const restartFrom = Math.min(playheadRef.current, liveEndRef.current);
             onEndChange(liveEndRef.current);
+            handleDragEnd(restartFrom);
           }}
         >
           <div className="absolute inset-y-0 w-[2px] left-1/2 -translate-x-1/2 bg-primary shadow-[0_0_8px_rgba(201,168,76,0.5)]" />
@@ -400,7 +456,7 @@ export default function WaveformTrimmer({
               : <Play  size={15} strokeWidth={2.5} className="translate-x-[1px]" />
             }
           </button>
-          <span className={`font-mono text-xs font-semibold ${tooShort ? 'text-red-400' : 'text-ink-subtle'}`}>
+          <span ref={clipDurRef} className={`font-mono text-xs font-semibold ${tooShort || tooLong ? 'text-red-400' : 'text-ink-subtle'}`}>
             {fmt(clipDuration)}
           </span>
         </div>
@@ -412,12 +468,6 @@ export default function WaveformTrimmer({
       </div>
 
       {/* Minimum duration warning */}
-      {tooShort && (
-        <div className="flex items-center gap-2 text-xs text-red-400 bg-red-400/8 border border-red-400/20 rounded-lg px-3 py-2">
-          <span>⚠</span>
-          <span>Selection is {fmt(clipDuration)} — excerpts must be at least 1:00 long.</span>
-        </div>
-      )}
     </div>
   );
 }

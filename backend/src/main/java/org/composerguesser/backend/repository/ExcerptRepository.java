@@ -14,7 +14,8 @@ public interface ExcerptRepository extends JpaRepository<Excerpt, Long> {
      */
     @Query(value = """
             SELECT * FROM tbl_excerpt
-            WHERE times_used = (SELECT MIN(times_used) FROM tbl_excerpt)
+            WHERE is_draft = false
+              AND times_used = (SELECT MIN(times_used) FROM tbl_excerpt WHERE is_draft = false)
             ORDER BY RANDOM()
             LIMIT 1
             """, nativeQuery = true)

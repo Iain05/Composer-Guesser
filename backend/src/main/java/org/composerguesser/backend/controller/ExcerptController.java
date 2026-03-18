@@ -2,13 +2,19 @@ package org.composerguesser.backend.controller;
 
 import org.composerguesser.backend.dto.DailyChallengeDto;
 import org.composerguesser.backend.model.ExcerptDay;
+import org.composerguesser.backend.model.User;
 import org.composerguesser.backend.repository.ExcerptDayRepository;
+import org.composerguesser.backend.service.ExcerptSubmitService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/excerpt")
@@ -17,11 +23,14 @@ public class ExcerptController {
     private static final ZoneId PACIFIC = ZoneId.of("America/Vancouver");
 
     private final ExcerptDayRepository excerptDayRepository;
+    private final ExcerptSubmitService excerptSubmitService;
     private final String audioBaseUrl;
 
     public ExcerptController(ExcerptDayRepository excerptDayRepository,
+                             ExcerptSubmitService excerptSubmitService,
                              @Value("${audio.base-url}") String audioBaseUrl) {
         this.excerptDayRepository = excerptDayRepository;
+        this.excerptSubmitService = excerptSubmitService;
         this.audioBaseUrl = audioBaseUrl;
     }
 
@@ -42,5 +51,46 @@ public class ExcerptController {
                         audioBaseUrl + "/" + excerpt.getFilename()
                 )))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Accepts a trimmed WAV file and metadata from an authenticated user, creates a draft
+     * excerpt record, and writes the audio to the configured storage volume.
+     *
+     * <p>The audio file is saved before the database record is inserted. If the insert fails,
+     * the file is deleted immediately so no orphaned files can accumulate. Retries are always
+     * safe because a fresh UUID filename is generated on each request.</p>
+     *
+     * @param audio       trimmed WAV blob from the frontend
+     * @param composerId  ID of the composer
+     * @param workId      optional ID of the work within that composer's catalogue
+     * @param title       display name for the excerpt
+     * @param description optional free-text description
+     * @param user        injected from JWT; null if not authenticated
+     * @return 201 on success, 400 on bad input, 401 if not logged in, 500 on server error
+     */
+    @PostMapping("/submit")
+    public ResponseEntity<?> submitExcerpt(
+            @RequestParam("audio") MultipartFile audio,
+            @RequestParam("composerId") Long composerId,
+            @RequestParam(value = "workId", required = false) Long workId,
+            @RequestParam("title") String title,
+            @RequestParam(value = "compositionYear", required = false) Integer compositionYear,
+            @RequestParam(value = "description", required = false) String description,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "You must be logged in to submit an excerpt"));
+        }
+
+        try {
+            excerptSubmitService.submit(audio, composerId, workId, title, compositionYear, description, user);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 }

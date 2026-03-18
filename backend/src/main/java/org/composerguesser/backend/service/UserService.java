@@ -6,6 +6,8 @@ import org.composerguesser.backend.dto.RegisterRequestDto;
 import org.composerguesser.backend.model.User;
 import org.composerguesser.backend.repository.UserRepository;
 import org.composerguesser.backend.security.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,8 @@ import java.time.LocalDateTime;
  */
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -47,6 +51,7 @@ public class UserService {
         user.setTotalPoints(0);
         user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
+        log.info("New user registered: username={} email={}", user.getDisplayUsername(), user.getEmail());
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponseDto(token, user.getDisplayUsername(), user.getEmail(), user.getTotalPoints(), user.getRole());
     }
@@ -67,6 +72,7 @@ public class UserService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
         }
+        log.info("User logged in: username={} email={}", user.getDisplayUsername(), user.getEmail());
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponseDto(token, user.getDisplayUsername(), user.getEmail(), user.getTotalPoints(), user.getRole());
     }

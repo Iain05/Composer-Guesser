@@ -10,6 +10,7 @@ interface ExcerptMetadataFormProps {
   onComposerChange: (composer: ComposerSummary | null) => void;
   onWorkChange: (work: ComposerWorkSummary | null) => void;
   onTitleChange: (title: string) => void;
+  onCompositionYearChange: (year: number | null) => void;
   onDescriptionChange: (description: string) => void;
 }
 
@@ -18,6 +19,7 @@ const ExcerptMetadataForm: React.FC<ExcerptMetadataFormProps> = ({
   onComposerChange,
   onWorkChange,
   onTitleChange,
+  onCompositionYearChange,
   onDescriptionChange,
 }) => {
   const [composerQuery, setComposerQuery] = useState('');
@@ -27,6 +29,7 @@ const ExcerptMetadataForm: React.FC<ExcerptMetadataFormProps> = ({
   const [workQuery, setWorkQuery] = useState('');
   const [selectedWork, setSelectedWork] = useState<ComposerWorkSummary | null>(null);
   const [worksLoading, setWorksLoading] = useState(false);
+  const [compositionYear, setCompositionYear] = useState('');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -96,6 +99,13 @@ const ExcerptMetadataForm: React.FC<ExcerptMetadataFormProps> = ({
     onTitleChange(e.target.value);
   }
 
+  function handleYearChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCompositionYear(raw);
+    const parsed = parseInt(raw);
+    onCompositionYearChange(raw.length === 4 && parsed >= 600 && parsed <= new Date().getFullYear() ? parsed : null);
+  }
+
   function handleDescriptionChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value.slice(0, DESCRIPTION_MAX);
     setDescription(val);
@@ -153,23 +163,40 @@ const ExcerptMetadataForm: React.FC<ExcerptMetadataFormProps> = ({
         </div>
       </div>
 
-      {/* ── Title ── */}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="excerpt-title" className="text-sm font-semibold text-ink">
-          Title <span className="text-primary">*</span>
-        </label>
-        <input
-          id="excerpt-title"
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          maxLength={255}
-          placeholder="e.g. Symphony No. 5 in C minor, Op. 67 — I. Allegro con brio"
-          className="w-full px-4 py-3 bg-surface text-ink placeholder:text-ink-subtle border-2 border-border rounded-xl focus:border-primary focus:outline-none transition-all"
-        />
-        <p className="text-xs text-ink-subtle">
-          If this excerpt is from a specific movement or part, include it here!
-        </p>
+      {/* ── Title + Year ── */}
+      <div className="grid grid-cols-6 gap-4">
+        <div className="col-span-5 flex flex-col gap-1.5">
+          <label htmlFor="excerpt-title" className="text-sm font-semibold text-ink">
+            Title <span className="text-primary">*</span>
+          </label>
+          <input
+            id="excerpt-title"
+            type="text"
+            value={title}
+            onChange={handleTitleChange}
+            maxLength={255}
+            placeholder="e.g. Symphony No. 5 in C minor, Op. 67 — I. Allegro con brio"
+            className="w-full px-4 py-3 bg-surface text-ink placeholder:text-ink-subtle border-2 border-border rounded-xl focus:border-primary focus:outline-none transition-all"
+          />
+          <p className="text-xs text-ink-subtle">
+            If this excerpt is from a specific movement or part, include it here!
+          </p>
+        </div>
+        <div className="col-span-1 flex flex-col gap-1.5">
+          <label htmlFor="excerpt-year" className="text-sm font-semibold text-ink">
+            Year <span className="text-ink-subtle font-normal">(optional)</span>
+          </label>
+          <input
+            id="excerpt-year"
+            type="text"
+            inputMode="numeric"
+            value={compositionYear}
+            onChange={handleYearChange}
+            maxLength={4}
+            placeholder="e.g. 1808"
+            className="w-full px-4 py-3 bg-surface text-ink placeholder:text-ink-subtle border-2 border-border rounded-xl focus:border-primary focus:outline-none transition-all"
+          />
+        </div>
       </div>
 
       {/* ── Description ── */}
