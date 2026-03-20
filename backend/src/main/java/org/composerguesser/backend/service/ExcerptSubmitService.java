@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -121,14 +122,23 @@ public class ExcerptSubmitService {
         String finalFilename = lastName + "-" + saved.getExcerptId() + ".wav";
         Path finalPath = Paths.get(storagePath, finalFilename);
         try {
-            Files.move(tempPath, finalPath);
+            Files.move(tempPath, finalPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             saved.setFilename(finalFilename);
             excerptRepository.save(saved);
             log.info("Excerpt created: excerptId={} user={} file={}",
                     saved.getExcerptId(), user.getDisplayUsername(), finalFilename);
         } catch (IOException e) {
-            // Non-critical: record is valid, file exists under temp name — log and continue
-            log.warn("Could not rename {} to {}, keeping temp name: {}", tempFilename, finalFilename, e.getMessage());
+            // ATOMIC_MOVE failed (e.g. cross-device) — fall back to copy + delete
+            try {
+                Files.copy(tempPath, finalPath, StandardCopyOption.REPLACE_EXISTING);
+                Files.deleteIfExists(tempPath);
+                saved.setFilename(finalFilename);
+                excerptRepository.save(saved);
+                log.info("Excerpt created (copy fallback): excerptId={} user={} file={}",
+                        saved.getExcerptId(), user.getDisplayUsername(), finalFilename);
+            } catch (IOException fallbackEx) {
+                log.error("Could not rename {} to {}: {}", tempFilename, finalFilename, fallbackEx.getMessage(), fallbackEx);
+            }
         }
 
         return saved;

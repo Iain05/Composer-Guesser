@@ -18,6 +18,9 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - AUDIO_BASE_URL=/audio
       - JWT_SECRET=${JWT_SECRET}
+      - AUDIO_STORAGE_PATH=/audio-files
+    volumes:
+      - ./audio-files:/audio-files
     depends_on:
       - db
     profiles: ["prod"]
