@@ -71,10 +71,6 @@ public class ExcerptSubmitService {
             throw new IllegalArgumentException("Composer not found");
         }
 
-        String lastName = composerRepository.findById(composerId)
-                .map(c -> c.getLastName().toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").strip())
-                .orElse("unknown");
-
         // Use a temporary UUID filename until we have the excerpt ID from the DB insert
         String tempFilename = UUID.randomUUID() + ".wav";
         Path tempPath = Paths.get(storagePath, tempFilename);
@@ -119,7 +115,8 @@ public class ExcerptSubmitService {
         }
 
         // Step 3: rename file to final name now that we have the excerpt ID
-        String finalFilename = lastName + "-" + saved.getExcerptId() + ".wav";
+        String shortUuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String finalFilename = shortUuid + "-" + saved.getExcerptId() + ".wav";
         Path finalPath = Paths.get(storagePath, finalFilename);
         try {
             Files.move(tempPath, finalPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
