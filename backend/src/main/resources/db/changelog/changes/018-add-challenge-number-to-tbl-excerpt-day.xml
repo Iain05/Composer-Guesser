@@ -28,7 +28,7 @@
         <!-- Advance the sequence past any existing values -->
         <sql>
             SELECT setval('tbl_excerpt_day_challenge_number_seq',
-                          COALESCE((SELECT MAX(challenge_number) FROM tbl_excerpt_day), 0));
+                          COALESCE((SELECT MAX(challenge_number) FROM tbl_excerpt_day), 1));
         </sql>
 
         <!-- Set sequence as column default for future inserts -->
