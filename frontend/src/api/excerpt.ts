@@ -1,6 +1,8 @@
 export interface DailyChallenge {
   excerptId: number;
   audioUrl: string;
+  challengeNumber: number | null;
+  date: string | null;
 }
 
 export async function getDailyChallenge(): Promise<DailyChallenge> {

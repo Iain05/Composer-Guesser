@@ -70,7 +70,7 @@ const SubmitExcerptModal: React.FC<SubmitExcerptModalProps> = ({
 
         {state === 'success' && (
           <>
-            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-3xl">
+            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-3xl text-green-600 dark:text-green-400">
               ✓
             </div>
             <div>

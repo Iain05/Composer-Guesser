@@ -11,19 +11,24 @@ import { getComposers, type ComposerSummary } from '@src/api/composer';
 import { useAuth } from '@src/context/AuthContext';
 import { useToast } from '@src/context/ToastContext';
 import { ShieldCheck } from 'lucide-react';
+import type { ShareData } from '@src/utils/shareScore';
 
 const DailyComposer: React.FC = () => {
-  const { token, addPoints, isAdmin } = useAuth();
+  const { token, addPoints, isAdmin, user } = useAuth();
   const { showToast } = useToast();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [excerptId, setExcerptId] = useState<number | null>(null);
   const [composers, setComposers] = useState<ComposerSummary[]>([]);
+  const [challengeNumber, setChallengeNumber] = useState<number | null>(null);
+  const [challengeDate, setChallengeDate] = useState<string | null>(null);
 
   useEffect(() => {
     getDailyChallenge()
       .then((data) => {
         setAudioUrl(data.audioUrl);
         setExcerptId(data.excerptId);
+        setChallengeNumber(data.challengeNumber);
+        setChallengeDate(data.date);
       })
       .catch(console.error);
 
@@ -32,6 +37,14 @@ const DailyComposer: React.FC = () => {
 
   const { guesses, isGameOver, gameKey, won, lastGuess, submitGuess, isLoading, justFinished, clearJustFinished } =
     useGameState(excerptId, token, addPoints);
+
+  const shareData: ShareData = {
+    guesses,
+    won,
+    challengeNumber,
+    challengeDate,
+    streak: user?.streak ?? 0,
+  };
 
   const leaderboardLink = (
     <div className="flex items-center gap-2">
@@ -76,7 +89,7 @@ const DailyComposer: React.FC = () => {
           onError={showToast}
         />
 
-        <GuessGrid guesses={guesses} />
+        <GuessGrid guesses={guesses} isGameOver={isGameOver} shareData={shareData} />
 
         {justFinished && lastGuess && (
           <GameStatus
@@ -84,6 +97,7 @@ const DailyComposer: React.FC = () => {
             composerName={lastGuess.targetComposerName}
             pieceTitle={lastGuess.pieceTitle}
             onClose={clearJustFinished}
+            shareData={shareData}
           />
         )}
       </main>

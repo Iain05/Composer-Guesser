@@ -568,7 +568,7 @@ const AdminReview: React.FC = () => {
 
         {!loading && !fetchError && totalElements === 0 && (
           <div className="text-center py-16">
-            <p className="text-2xl mb-2">✓</p>
+            <p className="text-2xl mb-2 text-green-600 dark:text-green-400">✓</p>
             <p className="text-ink font-semibold">No results</p>
           </div>
         )}

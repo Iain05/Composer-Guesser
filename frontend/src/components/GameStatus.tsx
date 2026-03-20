@@ -1,19 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
+import { Copy, Check } from 'lucide-react';
+import { buildShareText, copyToClipboard, type ShareData } from '@src/utils/shareScore';
 
 interface GameStatusProps {
   won: boolean;
   composerName: string;
   pieceTitle: string;
   onClose: () => void;
+  shareData: ShareData;
 }
 
-const GameStatus: React.FC<GameStatusProps> = ({ won, composerName, pieceTitle, onClose }) => {
+const GameStatus: React.FC<GameStatusProps> = ({ won, composerName, pieceTitle, onClose, shareData }) => {
   const [closing, setClosing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   function handleClose() {
     setClosing(true);
     setTimeout(onClose, 200);
+  }
+
+  async function handleShare() {
+    try {
+      await copyToClipboard(buildShareText(shareData));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('Share failed:', e);
+    }
   }
 
   useEffect(() => {
@@ -51,6 +65,15 @@ const GameStatus: React.FC<GameStatusProps> = ({ won, composerName, pieceTitle, 
             </p>
           </>
         )}
+
+        <button
+          onClick={handleShare}
+          className="mt-6 flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-surface border border-border text-ink text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-border-hover transition-all"
+        >
+          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          {copied ? 'Copied!' : 'Share your score'}
+        </button>
+
         {/* This button is commented out because i want to add it back but as a 'view daily leaderboard' button or something */}
         {/* <button */}
         {/*   onClick={onPlayAgain} */}

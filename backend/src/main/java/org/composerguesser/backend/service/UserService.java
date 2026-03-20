@@ -53,7 +53,7 @@ public class UserService {
         userRepository.save(user);
         log.info("New user registered: username={} email={}", user.getDisplayUsername(), user.getEmail());
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponseDto(token, user.getDisplayUsername(), user.getEmail(), user.getTotalPoints(), user.getRole());
+        return new AuthResponseDto(token, user.getDisplayUsername(), user.getEmail(), user.getTotalPoints(), user.getRole(), user.getCurrentStreak());
     }
 
     /**
@@ -74,6 +74,6 @@ public class UserService {
         }
         log.info("User logged in: username={} email={}", user.getDisplayUsername(), user.getEmail());
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponseDto(token, user.getDisplayUsername(), user.getEmail(), user.getTotalPoints(), user.getRole());
+        return new AuthResponseDto(token, user.getDisplayUsername(), user.getEmail(), user.getTotalPoints(), user.getRole(), user.getCurrentStreak());
     }
 }

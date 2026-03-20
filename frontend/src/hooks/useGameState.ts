@@ -18,10 +18,12 @@ export function useGameState(excerptId: number | null, token: string | null, onP
   useEffect(() => {
     if (!excerptId || !token) return;
 
+    let ignored = false;
     setIsLoading(true);
 
     getMyGuesses(token)
       .then((history) => {
+        if (ignored) return;
         if (history.length === 0) {
           setIsLoading(false);
           return;
@@ -34,9 +36,10 @@ export function useGameState(excerptId: number | null, token: string | null, onP
           timeoutsRef.current.push(t);
         });
       })
-      .catch(() => setIsLoading(false));
+      .catch(() => { if (!ignored) setIsLoading(false); });
 
     return () => {
+      ignored = true;
       timeoutsRef.current.forEach(clearTimeout);
       timeoutsRef.current = [];
     };

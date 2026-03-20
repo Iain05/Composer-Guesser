@@ -37,9 +37,9 @@
    Tailwind utilities use var(--color-*), so overriding here is enough.
    ─────────────────────────────────────────────────────────────────────── */
 .dark {
-  --color-canvas:       #141210;
-  --color-surface:      #1e1c18;
-  --color-surface-warm: #252018;
+  --color-canvas:       #242018;
+  --color-surface:      #2e2a22;
+  --color-surface-warm: #352e24;
 
   --color-ink:          #f0e8d8;
   --color-ink-muted:    #a89f8c;
@@ -49,8 +49,8 @@
   --color-primary-hover:#b8943a;
   --color-primary-text: #1a1210;  /* dark text on gold for readability */
 
-  --color-border:       #2e2920;
-  --color-border-hover: #403830;
+  --color-border:       #403a2e;
+  --color-border-hover: #564e3e;
 }
 
 a,

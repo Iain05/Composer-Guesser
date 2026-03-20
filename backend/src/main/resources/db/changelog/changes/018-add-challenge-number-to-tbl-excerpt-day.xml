@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="018" author="composerguesser">
+        <!-- Add column nullable initially so we can backfill existing rows -->
+        <addColumn tableName="tbl_excerpt_day">
+            <column name="challenge_number" type="INT"/>
+        </addColumn>
+
+        <!-- Create sequence starting at 1 -->
+        <sql>CREATE SEQUENCE tbl_excerpt_day_challenge_number_seq START WITH 1;</sql>
+
+        <!-- Backfill existing rows in date order (earliest date = challenge #1) -->
+        <sql>
+            UPDATE tbl_excerpt_day
+            SET challenge_number = sub.rn
+            FROM (
+                SELECT date, ROW_NUMBER() OVER (ORDER BY date) AS rn
+                FROM tbl_excerpt_day
+            ) sub
+            WHERE tbl_excerpt_day.date = sub.date;
+        </sql>
+
+        <!-- Advance the sequence past any existing values -->
+        <sql>
+            SELECT setval('tbl_excerpt_day_challenge_number_seq',
+                          COALESCE((SELECT MAX(challenge_number) FROM tbl_excerpt_day), 0));
+        </sql>
+
+        <!-- Set sequence as column default for future inserts -->
+        <sql>
+            ALTER TABLE tbl_excerpt_day
+            ALTER COLUMN challenge_number SET DEFAULT nextval('tbl_excerpt_day_challenge_number_seq');
+        </sql>
+
+        <addNotNullConstraint tableName="tbl_excerpt_day" columnName="challenge_number" columnDataType="INT"/>
+        <addUniqueConstraint tableName="tbl_excerpt_day" columnNames="challenge_number"
+                             constraintName="uq_excerpt_day_challenge_number"/>
+    </changeSet>
+
+</databaseChangeLog>

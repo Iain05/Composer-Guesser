@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HintCard from './HintCard';
 import { MAX_GUESSES } from '@src/data/gameData';
 import type { GuessResult } from '@src/api/guess';
 import type { HintStatus } from '@src/types/game';
+import { Copy, Check } from 'lucide-react';
+import { buildShareText, copyToClipboard, type ShareData } from '@src/utils/shareScore';
 
 interface GuessGridProps {
   guesses: GuessResult[];
+  isGameOver?: boolean;
+  shareData?: ShareData;
 }
 
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
@@ -35,7 +39,20 @@ function getYearText(birthYear: number, yearHint: GuessResult['yearHint']): stri
 
 const COLUMNS = ['Composer', 'Birth Year', 'Era', 'Nationality'];
 
-const GuessGrid: React.FC<GuessGridProps> = ({ guesses }) => {
+const GuessGrid: React.FC<GuessGridProps> = ({ guesses, isGameOver, shareData }) => {
+  const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    if (!shareData) return;
+    try {
+      await copyToClipboard(buildShareText(shareData));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('Share failed:', e);
+    }
+  }
+
   return (
     <div className="mt-2">
       <div className="grid grid-cols-4 gap-2 text-[10px] font-bold text-ink-subtle uppercase tracking-widest text-center">
@@ -71,6 +88,16 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses }) => {
           );
         })}
       </div>
+
+      {isGameOver && shareData && (
+        <button
+          onClick={handleShare}
+          className="mt-4 flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-surface border border-border text-ink text-sm font-semibold rounded-xl shadow-sm hover:shadow-md hover:border-border-hover transition-all"
+        >
+          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          {copied ? 'Copied!' : 'Share your score'}
+        </button>
+      )}
     </div>
   );
 };

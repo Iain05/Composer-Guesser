@@ -6,6 +6,7 @@ interface AuthUser {
   email: string;
   totalPoints: number;
   role: string;
+  streak: number;
 }
 
 interface AuthContextValue {
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
-        const updated: AuthUser = { username: data.username, email: data.email, totalPoints: data.totalPoints, role: data.role ?? 'USER' };
+        const updated: AuthUser = { username: data.username, email: data.email, totalPoints: data.totalPoints, role: data.role ?? 'USER', streak: data.streak ?? 0 };
         localStorage.setItem(USER_KEY, JSON.stringify(updated));
         setUser(updated);
         if (data.token) {
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   function persist(res: AuthResponse) {
-    const u: AuthUser = { username: res.username, email: res.email, totalPoints: res.totalPoints, role: res.role ?? 'USER' };
+    const u: AuthUser = { username: res.username, email: res.email, totalPoints: res.totalPoints, role: res.role ?? 'USER', streak: res.streak ?? 0 };
     localStorage.setItem(TOKEN_KEY, res.token);
     localStorage.setItem(USER_KEY, JSON.stringify(u));
     setToken(res.token);

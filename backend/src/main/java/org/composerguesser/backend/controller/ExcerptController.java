@@ -45,10 +45,11 @@ public class ExcerptController {
     public ResponseEntity<DailyChallengeDto> getDailyChallenge() {
         LocalDate today = LocalDate.now(PACIFIC);
         return excerptDayRepository.findById(today)
-                .map(ExcerptDay::getExcerpt)
-                .map(excerpt -> ResponseEntity.ok(new DailyChallengeDto(
-                        excerpt.getExcerptId(),
-                        audioBaseUrl + "/" + excerpt.getFilename()
+                .map(day -> ResponseEntity.ok(new DailyChallengeDto(
+                        day.getExcerpt().getExcerptId(),
+                        audioBaseUrl + "/" + day.getExcerpt().getFilename(),
+                        day.getChallengeNumber(),
+                        today.toString()
                 )))
                 .orElse(ResponseEntity.notFound().build());
     }
