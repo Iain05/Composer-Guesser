@@ -27,8 +27,12 @@ function formatDate(iso: string): string {
 export async function copyToClipboard(text: string): Promise<void> {
   // Modern clipboard API
   if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (err) {
+      console.log("error copying to clipboard");
+    }
   }
   // Fallback for browsers/contexts where clipboard API isn't available
   const el = document.createElement('textarea');
