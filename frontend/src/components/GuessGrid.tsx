@@ -34,7 +34,14 @@ function formatEra(era: string): string {
 
 function getYearText(birthYear: number, yearHint: GuessResult['yearHint']): string {
   if (yearHint === 'CORRECT') return String(birthYear);
-  return yearHint === 'TOO_LOW' ? `${birthYear} ↑` : `${birthYear} ↓`;
+  if (yearHint === 'TOO_LOW' || yearHint === 'CLOSE_LOW') return `${birthYear} ↑`;
+  return `${birthYear} ↓`;
+}
+
+function getYearStatus(yearHint: GuessResult['yearHint']): HintStatus {
+  if (yearHint === 'CORRECT') return 'CORRECT';
+  if (yearHint === 'CLOSE_LOW' || yearHint === 'CLOSE_HIGH') return 'CLOSE';
+  return 'WRONG';
 }
 
 const COLUMNS = ['Composer', 'Birth Year', 'Era', 'Nationality'];
@@ -80,7 +87,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, isGameOver, shareData })
               <HintCard text={guess.composerName} status={guess.composerHint} />
               <HintCard
                 text={getYearText(guess.birthYear, guess.yearHint)}
-                status={guess.yearHint === 'CORRECT' ? 'correct' : 'wrong'}
+                status={getYearStatus(guess.yearHint)}
               />
               <HintCard text={formatEra(guess.era)} status={guess.eraHint as HintStatus} />
               <HintCard text={formatNationality(guess.nationality)} status={guess.nationalityHint} />

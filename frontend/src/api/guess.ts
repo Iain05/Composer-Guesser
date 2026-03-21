@@ -4,13 +4,14 @@ export interface GuessResult {
   birthYear: number;
   era: string;
   nationality: string;
-  composerHint: 'correct' | 'wrong';
-  yearHint: 'CORRECT' | 'TOO_LOW' | 'TOO_HIGH';
-  eraHint: 'correct' | 'close' | 'wrong';
-  nationalityHint: 'correct' | 'wrong';
+  composerHint: 'CORRECT' | 'WRONG';
+  yearHint: 'CORRECT' | 'TOO_LOW' | 'TOO_HIGH' | 'CLOSE_LOW' | 'CLOSE_HIGH';
+  eraHint: 'CORRECT' | 'CLOSE' | 'WRONG';
+  nationalityHint: 'CORRECT' | 'WRONG';
   pieceTitle: string;
   targetComposerName: string;
   pointsEarned: number;
+  newStreak: number;
 }
 
 export async function getMyGuesses(token: string): Promise<GuessResult[]> {

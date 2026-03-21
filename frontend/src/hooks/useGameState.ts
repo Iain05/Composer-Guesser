@@ -4,7 +4,7 @@ import { submitGuess as submitGuessApi, getMyGuesses, type GuessResult } from '@
 
 const HISTORY_STAGGER_MS = 500;
 
-export function useGameState(excerptId: number | null, token: string | null, onPointsEarned: (points: number) => void) {
+export function useGameState(excerptId: number | null, token: string | null, onPointsEarned: (points: number, newStreak: number) => void) {
   const [guesses, setGuesses] = useState<GuessResult[]>([]);
   const [gameKey, setGameKey] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ export function useGameState(excerptId: number | null, token: string | null, onP
         if (gameOver) setJustFinished(true);
         return next;
       });
-      if (result.pointsEarned > 0) onPointsEarned(result.pointsEarned);
+      if (result.pointsEarned > 0) onPointsEarned(result.pointsEarned, result.newStreak);
       return null;
     } catch (err) {
       return err instanceof Error ? err.message : 'Something went wrong';

@@ -7,9 +7,9 @@ interface HintCardProps {
 }
 
 const statusClass: Record<HintStatus, string> = {
-  correct: 'bg-correct',
-  close: 'bg-close',
-  wrong: 'bg-wrong',
+  CORRECT: 'bg-correct',
+  CLOSE: 'bg-close',
+  WRONG: 'bg-wrong',
 };
 
 const HintCard: React.FC<HintCardProps> = ({ text, status }) => {

@@ -97,11 +97,14 @@ public class GuessService {
 
         boolean correct = guessed.getComposerId().equals(target.getComposerId());
 
-        String composerHint = correct ? "correct" : "wrong";
+        String composerHint = correct ? "CORRECT" : "WRONG";
 
         String yearHint;
+        int yearDiff = Math.abs(guessed.getBirthYear() - target.getBirthYear());
         if (guessed.getBirthYear().equals(target.getBirthYear())) {
             yearHint = "CORRECT";
+        } else if (yearDiff <= 15) {
+            yearHint = guessed.getBirthYear() < target.getBirthYear() ? "CLOSE_LOW" : "CLOSE_HIGH";
         } else if (guessed.getBirthYear() < target.getBirthYear()) {
             yearHint = "TOO_LOW";
         } else {
@@ -109,9 +112,10 @@ public class GuessService {
         }
 
         String eraHint = getEraHint(guessed.getEra(), target.getEra());
-        String nationalityHint = guessed.getNationality().equals(target.getNationality()) ? "correct" : "wrong";
+        String nationalityHint = guessed.getNationality().equals(target.getNationality()) ? "CORRECT" : "WRONG";
 
         int pointsEarned = 0;
+        int newStreak = user != null ? user.getCurrentStreak() : 0;
         if (user != null) {
             if (userGuessRepository.existsByUserIdAndDateAndComposerId(user.getUserId(), today, guessed.getComposerId())) {
                 throw new IllegalArgumentException("You have already guessed that composer");
@@ -128,6 +132,7 @@ public class GuessService {
                     user.setCurrentStreak(hadYesterday ? user.getCurrentStreak() + 1 : 1);
                     userRepository.save(user);
                     pointsEarned = points;
+                    newStreak = user.getCurrentStreak();
                 }
             }
         }
@@ -144,7 +149,8 @@ public class GuessService {
                 nationalityHint,
                 excerpt.getName(),
                 target.getCompleteName(),
-                pointsEarned
+                pointsEarned,
+                newStreak
         );
     }
 
@@ -166,6 +172,9 @@ public class GuessService {
                     Composer target = composerRepository.findById(excerpt.getComposerId()).orElse(null);
                     if (target == null) return List.<GuessResultDto>of();
 
+                    Integer rawPoints = userPointRepository.findDailyPointsByUserIdAndDate(user.getUserId(), today);
+                    int todayPoints = rawPoints != null ? rawPoints : 0;
+
                     return userGuessRepository
                             .findByUserIdAndDateOrderByGuessNumber(user.getUserId(), today)
                             .stream()
@@ -174,7 +183,9 @@ public class GuessService {
                                 if (guessed == null) return null;
                                 boolean correct = guessed.getComposerId().equals(target.getComposerId());
                                 String yearHint;
+                                int yearDiff = Math.abs(guessed.getBirthYear() - target.getBirthYear());
                                 if (guessed.getBirthYear().equals(target.getBirthYear())) yearHint = "CORRECT";
+                                else if (yearDiff <= 15) yearHint = guessed.getBirthYear() < target.getBirthYear() ? "CLOSE_LOW" : "CLOSE_HIGH";
                                 else if (guessed.getBirthYear() < target.getBirthYear()) yearHint = "TOO_LOW";
                                 else yearHint = "TOO_HIGH";
                                 return new GuessResultDto(
@@ -183,12 +194,13 @@ public class GuessService {
                                         guessed.getBirthYear(),
                                         guessed.getEra().name(),
                                         guessed.getNationality(),
-                                        correct ? "correct" : "wrong",
+                                        correct ? "CORRECT" : "WRONG",
                                         yearHint,
                                         getEraHint(guessed.getEra(), target.getEra()),
-                                        guessed.getNationality().equals(target.getNationality()) ? "correct" : "wrong",
+                                        guessed.getNationality().equals(target.getNationality()) ? "CORRECT" : "WRONG",
                                         excerpt.getName(),
                                         target.getCompleteName(),
+                                        correct ? todayPoints : 0,
                                         0
                                 );
                             })
@@ -206,7 +218,7 @@ public class GuessService {
      * @return {@code "correct"} if equal, {@code "close"} if adjacent, {@code "wrong"} otherwise
      */
     private String getEraHint(Era guessed, Era target) {
-        if (guessed == target) return "correct";
-        return Math.abs(guessed.ordinal() - target.ordinal()) == 1 ? "close" : "wrong";
+        if (guessed == target) return "CORRECT";
+        return Math.abs(guessed.ordinal() - target.ordinal()) == 1 ? "CLOSE" : "WRONG";
     }
 }

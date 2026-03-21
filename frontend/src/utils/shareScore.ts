@@ -10,8 +10,8 @@ export interface ShareData {
 }
 
 function hintToEmoji(hint: string): string {
-  if (hint === 'correct' || hint === 'CORRECT') return '🟩';
-  if (hint === 'close') return '🟨';
+  if (hint === 'CORRECT') return '🟩';
+  if (hint === 'CLOSE' || hint === 'CLOSE_LOW' || hint === 'CLOSE_HIGH') return '🟨';
   return '⬜';
 }
 

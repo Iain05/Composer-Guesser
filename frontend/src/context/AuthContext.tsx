@@ -16,7 +16,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  addPoints: (points: number) => void;
+  addPoints: (points: number, newStreak: number) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -79,9 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.reload();
   }
 
-  function addPoints(points: number) {
+  function addPoints(points: number, newStreak: number) {
     if (!user) return;
-    const updated = { ...user, totalPoints: user.totalPoints + points };
+    const updated = { ...user, totalPoints: user.totalPoints + points, streak: newStreak };
     localStorage.setItem(USER_KEY, JSON.stringify(updated));
     setUser(updated);
   }

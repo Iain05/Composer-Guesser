@@ -1,1 +1,1 @@
-export type HintStatus = 'correct' | 'close' | 'wrong';
+export type HintStatus = 'CORRECT' | 'CLOSE' | 'WRONG';

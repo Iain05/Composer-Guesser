@@ -14,11 +14,12 @@ public class GuessResultDto {
     private final String pieceTitle;
     private final String targetComposerName;
     private final int pointsEarned;
+    private final int newStreak;
 
     public GuessResultDto(boolean correct, String composerName, int birthYear, String era,
                           String nationality, String composerHint, String yearHint,
                           String eraHint, String nationalityHint, String pieceTitle,
-                          String targetComposerName, int pointsEarned) {
+                          String targetComposerName, int pointsEarned, int newStreak) {
         this.correct = correct;
         this.composerName = composerName;
         this.birthYear = birthYear;
@@ -31,6 +32,7 @@ public class GuessResultDto {
         this.pieceTitle = pieceTitle;
         this.targetComposerName = targetComposerName;
         this.pointsEarned = pointsEarned;
+        this.newStreak = newStreak;
     }
 
     public boolean isCorrect() { return correct; }
@@ -45,4 +47,5 @@ public class GuessResultDto {
     public String getPieceTitle() { return pieceTitle; }
     public String getTargetComposerName() { return targetComposerName; }
     public int getPointsEarned() { return pointsEarned; }
+    public int getNewStreak() { return newStreak; }
 }
