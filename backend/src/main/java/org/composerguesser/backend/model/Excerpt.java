@@ -49,6 +49,12 @@ public class Excerpt {
     @Column(nullable = false, columnDefinition = "excerpt_status_type")
     private ExcerptStatus status = ExcerptStatus.DRAFT;
 
+    @Column(name = "points_eligible", nullable = false)
+    private boolean pointsEligible = false;
+
+    @Column(name = "points_awarded", nullable = false)
+    private boolean pointsAwarded = false;
+
     public Long getExcerptId() { return excerptId; }
     public void setExcerptId(Long excerptId) { this.excerptId = excerptId; }
 
@@ -83,4 +89,10 @@ public class Excerpt {
     public void setTimesUsed(Integer timesUsed) { this.timesUsed = timesUsed; }
     public ExcerptStatus getStatus() { return status; }
     public void setStatus(ExcerptStatus status) { this.status = status; }
+
+    public boolean isPointsEligible() { return pointsEligible; }
+    public void setPointsEligible(boolean pointsEligible) { this.pointsEligible = pointsEligible; }
+
+    public boolean isPointsAwarded() { return pointsAwarded; }
+    public void setPointsAwarded(boolean pointsAwarded) { this.pointsAwarded = pointsAwarded; }
 }

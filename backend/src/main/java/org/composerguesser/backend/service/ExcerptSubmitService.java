@@ -16,7 +16,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 /**
@@ -31,6 +33,8 @@ import java.util.UUID;
 public class ExcerptSubmitService {
 
     private static final Logger log = LoggerFactory.getLogger(ExcerptSubmitService.class);
+    private static final ZoneId VANCOUVER = ZoneId.of("America/Vancouver");
+    private static final int DAILY_POINT_ELIGIBLE_CAP = 5;
 
     private final ExcerptRepository excerptRepository;
     private final ComposerRepository composerRepository;
@@ -89,6 +93,13 @@ public class ExcerptSubmitService {
         }
 
         // Step 2: insert DB record with temp filename; on any failure delete the file
+        LocalDate today = LocalDate.now(VANCOUVER);
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+        int todayEligibleCount = excerptRepository.countPointEligibleSubmissionsOnDay(
+                user.getUserId(), startOfDay, endOfDay);
+        boolean pointsEligible = todayEligibleCount < DAILY_POINT_ELIGIBLE_CAP;
+
         Excerpt saved;
         try {
             Excerpt excerpt = new Excerpt();
@@ -102,6 +113,7 @@ public class ExcerptSubmitService {
             excerpt.setStatus(ExcerptStatus.DRAFT);
             excerpt.setTimesUsed(0);
             excerpt.setDateUploaded(LocalDateTime.now());
+            excerpt.setPointsEligible(pointsEligible);
             saved = excerptRepository.save(excerpt);
         } catch (Exception e) {
             log.error("DB insert failed, attempting cleanup of {}: {}", tempFilename, e.getMessage(), e);
@@ -139,5 +151,16 @@ public class ExcerptSubmitService {
         }
 
         return saved;
+    }
+
+    /**
+     * Returns how many point-eligible submissions the user has remaining today (0–5).
+     */
+    public int getSubmissionPointsRemaining(User user) {
+        LocalDate today = LocalDate.now(VANCOUVER);
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+        int used = excerptRepository.countPointEligibleSubmissionsOnDay(user.getUserId(), startOfDay, endOfDay);
+        return Math.max(0, DAILY_POINT_ELIGIBLE_CAP - used);
     }
 }

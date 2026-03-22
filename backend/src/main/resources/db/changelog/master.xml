@@ -23,5 +23,6 @@
     <include file="db/changelog/changes/016-add-date-to-tbl-user-guess.xml"/>
     <include file="db/changelog/changes/017-replace-is-draft-with-status.xml"/>
     <include file="db/changelog/changes/018-add-challenge-number-to-tbl-excerpt-day.xml"/>
+    <include file="db/changelog/changes/019-add-submission-point-columns.xml"/>
 
 </databaseChangeLog>

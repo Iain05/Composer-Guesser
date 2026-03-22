@@ -11,6 +11,15 @@ export async function getDailyChallenge(): Promise<DailyChallenge> {
   return res.json();
 }
 
+export async function getSubmissionPointsRemaining(token: string): Promise<number> {
+  const res = await fetch('/api/excerpt/submission-points-remaining', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return 5;
+  const data = await res.json();
+  return data.remaining as number;
+}
+
 export async function submitExcerpt(
   audioBlob: Blob,
   composerId: number,

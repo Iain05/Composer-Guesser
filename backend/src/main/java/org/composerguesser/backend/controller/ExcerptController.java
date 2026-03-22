@@ -55,6 +55,22 @@ public class ExcerptController {
     }
 
     /**
+     * Returns how many point-eligible excerpt submissions the authenticated user has remaining today (0–5).
+     * Submissions are point-eligible up to a cap of 5 per calendar day (America/Vancouver).
+     *
+     * @return 200 with {@code { "remaining": N }}, or 401 if not logged in
+     */
+    @GetMapping("/submission-points-remaining")
+    public ResponseEntity<?> getSubmissionPointsRemaining(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "You must be logged in"));
+        }
+        int remaining = excerptSubmitService.getSubmissionPointsRemaining(user);
+        return ResponseEntity.ok(Map.of("remaining", remaining));
+    }
+
+    /**
      * Accepts a trimmed WAV file and metadata from an authenticated user, creates a draft
      * excerpt record, and writes the audio to the configured storage volume.
      *

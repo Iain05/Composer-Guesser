@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -73,11 +74,16 @@ public class AdminService {
     /**
      * Updates the mutable fields of an excerpt and sets its status to {@link ExcerptStatus#ACTIVE},
      * making it eligible for the daily challenge.
+     * <p>
+     * If the excerpt is marked as point-eligible and points have not yet been awarded,
+     * 2 points are added to the submitter's {@code total_points}.
+     * </p>
      *
      * @param excerptId the excerpt to approve
      * @param dto       updated metadata from the admin
      * @throws IllegalArgumentException if the excerpt or the new composer does not exist
      */
+    @Transactional
     public void approveExcerpt(Long excerptId, ApproveExcerptDto dto) {
         Excerpt excerpt = excerptRepository.findById(excerptId)
                 .orElseThrow(() -> new IllegalArgumentException("Excerpt not found: " + excerptId));
@@ -95,6 +101,14 @@ public class AdminService {
         excerpt.setCompositionYear(dto.getCompositionYear());
         excerpt.setDescription(dto.getDescription());
         excerpt.setStatus(ExcerptStatus.ACTIVE);
+
+        if (excerpt.isPointsEligible() && !excerpt.isPointsAwarded()) {
+            userRepository.findById(excerpt.getUploadedByUserId()).ifPresent(submitter -> {
+                submitter.setTotalPoints(submitter.getTotalPoints() + 2);
+                userRepository.save(submitter);
+            });
+            excerpt.setPointsAwarded(true);
+        }
 
         excerptRepository.save(excerpt);
     }

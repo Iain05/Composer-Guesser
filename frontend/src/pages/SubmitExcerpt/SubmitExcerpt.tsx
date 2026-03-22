@@ -7,7 +7,7 @@ import SubmitExcerptModal from '@src/components/SubmitExcerptModal';
 import type { SubmitState } from '@src/components/SubmitExcerptModal';
 import { getComposers } from '@src/api/composer';
 import type { ComposerSummary, ComposerWorkSummary } from '@src/api/composer';
-import { submitExcerpt } from '@src/api/excerpt';
+import { submitExcerpt, getSubmissionPointsRemaining } from '@src/api/excerpt';
 import { exportWav } from '@src/utils/audioExport';
 import { useAuth } from '@src/context/AuthContext';
 
@@ -31,10 +31,14 @@ const SubmitExcerpt: React.FC = () => {
 
   const [modalState, setModalState] = useState<SubmitState | null>(null);
   const [submitError, setSubmitError] = useState('');
+  const [pointsRemaining, setPointsRemaining] = useState<number | null>(null);
 
   useEffect(() => {
-    getComposers().then(setComposers).catch(() => {});
-  }, []);
+    getComposers().then(setComposers).catch(() => { });
+    if (token) {
+      getSubmissionPointsRemaining(token).then(setPointsRemaining).catch(() => { });
+    }
+  }, [token]);
 
   async function loadFile(file: File) {
     if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|flac|ogg|m4a|aac)$/i)) {
@@ -103,6 +107,7 @@ const SubmitExcerpt: React.FC = () => {
         token,
       );
       setModalState('success');
+      setPointsRemaining(prev => prev !== null ? Math.max(0, prev - 1) : null);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Something went wrong.');
       setModalState('error');
@@ -154,11 +159,10 @@ const SubmitExcerpt: React.FC = () => {
         {!audioBuffer && (
           <div>
             <label
-              className={`flex flex-col items-center justify-center gap-4 h-52 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
-                isDragOver
+              className={`flex flex-col items-center justify-center gap-4 h-52 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${isDragOver
                   ? 'border-primary bg-primary/8 scale-[1.015]'
                   : 'border-border hover:border-primary/50 hover:bg-surface'
-              }`}
+                }`}
               onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
               onDragEnter={e => { e.preventDefault(); setIsDragOver(true); }}
               onDragLeave={() => setIsDragOver(false)}
@@ -250,7 +254,14 @@ const SubmitExcerpt: React.FC = () => {
             />
 
             {/* Submit */}
-            <div className="flex justify-center pt-1">
+            <div className="flex flex-col items-center gap-3 -mt-3">
+              {token && pointsRemaining !== null && (
+                <p className={`text-sm font-medium ${pointsRemaining === 0 ? 'text-ink-muted' : 'text-ink-muted'}`}>
+                  {pointsRemaining === 0
+                    ? 'No point-eligible submissions remaining today'
+                    : `${pointsRemaining}/5 point-eligible submission${pointsRemaining === 1 ? '' : 's'} remaining today`}
+                </p>
+              )}
               <div className="relative group">
                 <button
                   onClick={handleSubmitClick}
