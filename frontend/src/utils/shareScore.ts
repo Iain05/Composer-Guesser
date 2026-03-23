@@ -55,8 +55,8 @@ export function buildShareText(data: ShareData): string {
 
   const header =
     challengeNumber != null && dateStr != null
-      ? `ComposerGuesser #${challengeNumber} — ${dateStr}`
-      : 'ComposerGuesser';
+      ? `Maestrle#${challengeNumber} — ${dateStr}`
+      : 'Maestrle';
 
   const scoreParts = won ? [`🎼 ${points} pts`, `(${guessStr})`] : [`🎻 ${guessStr}`];
   if (streak > 0) scoreParts.push(`🔥 ${streak}`);
