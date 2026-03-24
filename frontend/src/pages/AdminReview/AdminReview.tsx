@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import PageLayout from '@src/components/PageLayout';
 import SearchDropdown from '@src/components/SearchDropdown';
 import { useAuth } from '@src/context/AuthContext';
 import {
-  getExcerpts, approveExcerpt, updateExcerptStatus,
-  type DraftExcerpt, type ExcerptsPage, type ExcerptStatus,
+  getExcerpts, approveExcerpt, updateExcerptStatus, getDailyChallenges,
+  type DraftExcerpt, type ExcerptsPage, type ExcerptStatus, type SortOption, type DailyChallengesResponse,
 } from '@src/api/admin';
 import { getComposers, getComposerWorks, type ComposerSummary, type ComposerWorkSummary } from '@src/api/composer';
 import { ChevronDown, ChevronUp, Check, X, ChevronLeft, ChevronRight, Trash2, RotateCcw, Undo2 } from 'lucide-react';
@@ -28,6 +28,13 @@ const STATUS_BADGE: Record<ExcerptStatus, string> = {
 };
 
 const ALL_STATUSES: ExcerptStatus[] = ['DRAFT', 'ACTIVE', 'REJECTED', 'DELETED'];
+
+const SORT_LABELS: Record<SortOption, string> = {
+  timesUsed_asc:    'Times used ↑',
+  timesUsed_desc:   'Times used ↓',
+  dateUploaded_asc: 'Date uploaded ↑',
+  dateUploaded_desc:'Date uploaded ↓',
+};
 
 // ── Confirmation modal ─────────────────────────────────────────────────────
 
@@ -247,7 +254,12 @@ const DraftCard: React.FC<DraftCardProps> = ({ excerpt, composers, token, onStat
           className="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-warm transition-colors text-left"
         >
           <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="font-semibold text-ink truncate">{excerpt.name}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="font-semibold text-ink truncate">{excerpt.name}</span>
+              {excerpt.status === 'ACTIVE' && (
+                <span className="text-xs text-ink-subtle font-medium flex-shrink-0">{excerpt.timesUsed}×</span>
+              )}
+            </div>
             <span className="text-ink-muted text-sm">{excerpt.composerName}</span>
           </div>
           <div className="flex items-center gap-4 flex-shrink-0 ml-4">
@@ -255,7 +267,7 @@ const DraftCard: React.FC<DraftCardProps> = ({ excerpt, composers, token, onStat
               <span className="text-ink-subtle text-xs">by {excerpt.uploaderUsername}</span>
               <span className="text-ink-subtle text-xs">{formattedDate}</span>
             </div>
-            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_BADGE[excerpt.status]}`}>
+<span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_BADGE[excerpt.status]}`}>
               {STATUS_LABELS[excerpt.status]}
             </span>
             {expanded
@@ -423,8 +435,15 @@ const AdminReview: React.FC = () => {
   const { token, isAdmin } = useAuth();
 
   const [selectedStatuses, setSelectedStatuses] = useState<Set<ExcerptStatus>>(new Set(['DRAFT']));
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
   const [composerQuery, setComposerQuery] = useState('');
   const [filterComposer, setFilterComposer] = useState<ComposerSummary | null>(null);
+  const [sort, setSort] = useState<SortOption>('timesUsed_asc');
+
+  const [dailyChallenges, setDailyChallenges] = useState<DailyChallengesResponse | null>(null);
 
   const [resultPage, setResultPage] = useState<ExcerptsPage | null>(null);
   const [composers, setComposers] = useState<ComposerSummary[]>([]);
@@ -432,11 +451,11 @@ const AdminReview: React.FC = () => {
   const [fetchError, setFetchError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const loadPage = useCallback((statuses: ExcerptStatus[], composerId: number | null, pageIndex: number) => {
+  const loadPage = useCallback((statuses: ExcerptStatus[], composerId: number | null, sortOption: SortOption, pageIndex: number) => {
     if (!token) return;
     setLoading(true);
     setFetchError('');
-    getExcerpts(token, statuses, composerId, pageIndex, PAGE_SIZE)
+    getExcerpts(token, statuses, composerId, sortOption, pageIndex, PAGE_SIZE)
       .then(p => setResultPage(p))
       .catch(e => setFetchError(e instanceof Error ? e.message : 'Failed to load'))
       .finally(() => setLoading(false));
@@ -445,8 +464,23 @@ const AdminReview: React.FC = () => {
   useEffect(() => {
     if (!token) return;
     getComposers().then(setComposers).catch(() => {});
-    loadPage(['DRAFT'], null, 0);
+    getDailyChallenges(token).then(setDailyChallenges).catch(() => {});
+    loadPage(['DRAFT'], null, 'timesUsed_asc', 0);
   }, [token, loadPage]);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
+        setStatusDropdownOpen(false);
+      }
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target as Node)) {
+        setSortDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   function toggleStatus(s: ExcerptStatus) {
     if (selectedStatuses.has(s) && selectedStatuses.size === 1) return;
@@ -454,14 +488,14 @@ const AdminReview: React.FC = () => {
     next.has(s) ? next.delete(s) : next.add(s);
     setSelectedStatuses(next);
     setCurrentPage(0);
-    loadPage([...next], filterComposer?.composerId ?? null, 0);
+    loadPage([...next], filterComposer?.composerId ?? null, sort, 0);
   }
 
   function handleFilterComposerSelect(c: ComposerSummary) {
     setFilterComposer(c);
     setComposerQuery(c.name);
     setCurrentPage(0);
-    loadPage([...selectedStatuses], c.composerId, 0);
+    loadPage([...selectedStatuses], c.composerId, sort, 0);
   }
 
   function handleFilterComposerChange(val: string) {
@@ -469,7 +503,7 @@ const AdminReview: React.FC = () => {
     if (filterComposer && val !== filterComposer.name) {
       setFilterComposer(null);
       setCurrentPage(0);
-      loadPage([...selectedStatuses], null, 0);
+      loadPage([...selectedStatuses], null, sort, 0);
     }
   }
 
@@ -477,18 +511,30 @@ const AdminReview: React.FC = () => {
     setFilterComposer(null);
     setComposerQuery('');
     setCurrentPage(0);
-    loadPage([...selectedStatuses], null, 0);
+    loadPage([...selectedStatuses], null, sort, 0);
+  }
+
+  function handleSortChange(newSort: SortOption) {
+    setSort(newSort);
+    setCurrentPage(0);
+    loadPage([...selectedStatuses], filterComposer?.composerId ?? null, newSort, 0);
   }
 
   // Refetch the current page after any status change
   function handleStatusChanged() {
-    loadPage([...selectedStatuses], filterComposer?.composerId ?? null, currentPage);
+    loadPage([...selectedStatuses], filterComposer?.composerId ?? null, sort, currentPage);
   }
 
   function goToPage(index: number) {
     setCurrentPage(index);
-    loadPage([...selectedStatuses], filterComposer?.composerId ?? null, index);
+    loadPage([...selectedStatuses], filterComposer?.composerId ?? null, sort, index);
   }
+
+  const statusDropdownLabel = selectedStatuses.size === ALL_STATUSES.length
+    ? 'All statuses'
+    : selectedStatuses.size === 1
+      ? STATUS_LABELS[[...selectedStatuses][0]]
+      : `${selectedStatuses.size} statuses`;
 
   const totalPages = resultPage?.totalPages ?? 0;
   const totalElements = resultPage?.totalElements ?? 0;
@@ -514,33 +560,62 @@ const AdminReview: React.FC = () => {
     <PageLayout leftSlot={backLink} title="Admin Review" subtitle="Manage submitted excerpts">
       <main className="max-w-3xl w-full flex flex-col gap-4">
 
+        {/* Daily challenge banner */}
+        {dailyChallenges && (
+          <div className="grid grid-cols-2 gap-3">
+            {(['today', 'tomorrow'] as const).map(day => {
+              const entry = dailyChallenges[day];
+              return (
+                <div key={day} className="p-3 bg-surface border border-border rounded-2xl flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{day === 'today' ? 'Today' : 'Tomorrow'}</span>
+                  {entry ? (
+                    <>
+                      <span className="text-sm font-semibold text-ink truncate">{entry.excerptName}</span>
+                      <span className="text-xs text-ink-muted">{entry.composerName}</span>
+                      <span className="text-xs text-ink-subtle mt-0.5">Challenge #{entry.challengeNumber}</span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-ink-subtle italic">Not scheduled</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Filters */}
-        <div className="flex flex-col gap-3 p-4 bg-surface border border-border rounded-2xl">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">Status</span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {ALL_STATUSES.map(s => {
-                const active = selectedStatuses.has(s);
-                return (
-                  <button
+        <div className="flex items-stretch gap-3 p-3 bg-surface border border-border rounded-2xl">
+          {/* Status multi-select dropdown */}
+          <div className="relative" ref={statusDropdownRef}>
+            <button
+              onClick={() => setStatusDropdownOpen(v => !v)}
+              className="flex items-center gap-2 px-4 h-full bg-canvas border-2 border-border text-ink text-sm font-semibold rounded-xl hover:border-border-hover transition-all"
+            >
+              <span>{statusDropdownLabel}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-ink-muted" />
+            </button>
+            {statusDropdownOpen && (
+              <div className="absolute z-20 top-full left-0 mt-1 bg-canvas border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                {ALL_STATUSES.map(s => (
+                  <label
                     key={s}
-                    onClick={() => toggleStatus(s)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg border transition-all ${
-                      active
-                        ? `${STATUS_BADGE[s]} border-transparent`
-                        : 'bg-surface border-border text-ink-muted hover:border-border-hover hover:text-ink'
-                    }`}
+                    className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface transition-colors"
+                    onClick={e => { e.preventDefault(); toggleStatus(s); }}
                   >
-                    {active && <Check className="w-3 h-3" />}
-                    {STATUS_LABELS[s]}
-                  </button>
-                );
-              })}
-            </div>
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      selectedStatuses.has(s) ? 'bg-primary border-primary' : 'border-border'
+                    }`}>
+                      {selectedStatuses.has(s) && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <span className="text-sm text-ink">{STATUS_LABELS[s]}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">Composer</span>
+          {/* Composer search */}
+          <div className="flex-1">
             <SearchDropdown
               items={composers}
               getKey={c => c.composerId}
@@ -553,6 +628,35 @@ const AdminReview: React.FC = () => {
               placeholder="All composers"
               icon="search"
             />
+          </div>
+        </div>
+
+        {/* Sort selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-ink-muted">Sort:</span>
+          <div className="relative" ref={sortDropdownRef}>
+            <button
+              onClick={() => setSortDropdownOpen(v => !v)}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-all"
+            >
+              {SORT_LABELS[sort]}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {sortDropdownOpen && (
+              <div className="absolute z-20 top-full left-0 mt-1 bg-canvas border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                {(Object.keys(SORT_LABELS) as SortOption[]).map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => { handleSortChange(opt); setSortDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-surface ${
+                      sort === opt ? 'text-primary font-semibold' : 'text-ink'
+                    }`}
+                  >
+                    {SORT_LABELS[opt]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

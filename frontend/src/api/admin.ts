@@ -33,22 +33,46 @@ export interface ExcerptsPage {
   last: boolean;
 }
 
+export type SortOption = 'timesUsed_asc' | 'timesUsed_desc' | 'dateUploaded_asc' | 'dateUploaded_desc';
+
 export async function getExcerpts(
   token: string,
   statuses: ExcerptStatus[] = ['DRAFT'],
   composerId: number | null = null,
+  sort: SortOption = 'timesUsed_asc',
   page = 0,
   size = 10,
 ): Promise<ExcerptsPage> {
   const params = new URLSearchParams();
   statuses.forEach(s => params.append('status', s));
   if (composerId != null) params.set('composerId', String(composerId));
+  params.set('sort', sort);
   params.set('page', String(page));
   params.set('size', String(size));
   const res = await fetch(`/api/admin/excerpts?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch excerpts');
+  return res.json();
+}
+
+export interface DailyChallengeEntry {
+  excerptId: number;
+  excerptName: string;
+  composerName: string;
+  challengeNumber: number;
+}
+
+export interface DailyChallengesResponse {
+  today: DailyChallengeEntry | null;
+  tomorrow: DailyChallengeEntry | null;
+}
+
+export async function getDailyChallenges(token: string): Promise<DailyChallengesResponse> {
+  const res = await fetch('/api/admin/daily-challenges', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to fetch daily challenges');
   return res.json();
 }
 

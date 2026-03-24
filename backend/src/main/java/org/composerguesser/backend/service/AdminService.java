@@ -1,12 +1,15 @@
 package org.composerguesser.backend.service;
 
 import org.composerguesser.backend.dto.ApproveExcerptDto;
+import org.composerguesser.backend.dto.DailyChallengesDto;
 import org.composerguesser.backend.dto.ExcerptReviewDto;
 import org.composerguesser.backend.model.Composer;
 import org.composerguesser.backend.model.Excerpt;
+import org.composerguesser.backend.model.ExcerptDay;
 import org.composerguesser.backend.model.ExcerptStatus;
 import org.composerguesser.backend.model.User;
 import org.composerguesser.backend.repository.ComposerRepository;
+import org.composerguesser.backend.repository.ExcerptDayRepository;
 import org.composerguesser.backend.repository.ExcerptRepository;
 import org.composerguesser.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +19,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -26,6 +31,7 @@ import java.util.List;
 public class AdminService {
 
     private final ExcerptRepository excerptRepository;
+    private final ExcerptDayRepository excerptDayRepository;
     private final ComposerRepository composerRepository;
     private final UserRepository userRepository;
 
@@ -33,9 +39,11 @@ public class AdminService {
     private String audioBaseUrl;
 
     public AdminService(ExcerptRepository excerptRepository,
+                        ExcerptDayRepository excerptDayRepository,
                         ComposerRepository composerRepository,
                         UserRepository userRepository) {
         this.excerptRepository = excerptRepository;
+        this.excerptDayRepository = excerptDayRepository;
         this.composerRepository = composerRepository;
         this.userRepository = userRepository;
     }
@@ -49,8 +57,14 @@ public class AdminService {
      * @param page       zero-based page index
      * @param size       items per page
      */
-    public Page<ExcerptReviewDto> getExcerpts(List<ExcerptStatus> statuses, Long composerId, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("dateUploaded").ascending());
+    public Page<ExcerptReviewDto> getExcerpts(List<ExcerptStatus> statuses, Long composerId, String sort, int page, int size) {
+        Sort springSort = switch (sort) {
+            case "timesUsed_desc"    -> Sort.by("timesUsed").descending();
+            case "dateUploaded_asc"  -> Sort.by("dateUploaded").ascending();
+            case "dateUploaded_desc" -> Sort.by("dateUploaded").descending();
+            default                  -> Sort.by("timesUsed").ascending();
+        };
+        PageRequest pageable = PageRequest.of(page, size, springSort);
         Page<Excerpt> results = composerId != null
                 ? excerptRepository.findAllByStatusInAndComposerId(statuses, composerId, pageable)
                 : excerptRepository.findAllByStatusIn(statuses, pageable);
@@ -111,6 +125,23 @@ public class AdminService {
         }
 
         excerptRepository.save(excerpt);
+    }
+
+    public DailyChallengesDto getDailyChallenges() {
+        LocalDate today = LocalDate.now(ZoneId.of("America/Vancouver"));
+        LocalDate tomorrow = today.plusDays(1);
+        DailyChallengesDto dto = new DailyChallengesDto();
+        excerptDayRepository.findById(today).ifPresent(ed -> dto.setToday(toEntry(ed)));
+        excerptDayRepository.findById(tomorrow).ifPresent(ed -> dto.setTomorrow(toEntry(ed)));
+        return dto;
+    }
+
+    private DailyChallengesDto.Entry toEntry(ExcerptDay ed) {
+        Excerpt excerpt = ed.getExcerpt();
+        String composerName = composerRepository.findById(excerpt.getComposerId())
+                .map(Composer::getCompleteName)
+                .orElse("Unknown composer");
+        return new DailyChallengesDto.Entry(excerpt.getExcerptId(), excerpt.getName(), composerName, ed.getChallengeNumber());
     }
 
     private ExcerptReviewDto toDto(Excerpt excerpt) {

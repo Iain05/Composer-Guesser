@@ -1,6 +1,7 @@
 package org.composerguesser.backend.controller;
 
 import org.composerguesser.backend.dto.ApproveExcerptDto;
+import org.composerguesser.backend.dto.DailyChallengesDto;
 import org.composerguesser.backend.dto.ExcerptReviewDto;
 import org.composerguesser.backend.dto.UpdateStatusDto;
 import org.composerguesser.backend.model.ExcerptStatus;
@@ -38,9 +39,10 @@ public class AdminController {
     public ResponseEntity<Page<ExcerptReviewDto>> getExcerpts(
             @RequestParam(defaultValue = "DRAFT") List<ExcerptStatus> status,
             @RequestParam(required = false) Long composerId,
+            @RequestParam(defaultValue = "timesUsed_asc") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(adminService.getExcerpts(status, composerId, page, size));
+        return ResponseEntity.ok(adminService.getExcerpts(status, composerId, sort, page, size));
     }
 
     /**
@@ -51,6 +53,11 @@ public class AdminController {
      * @param dto the target status
      * @return 200 on success, 400 if the excerpt is not found
      */
+    @GetMapping("/daily-challenges")
+    public ResponseEntity<DailyChallengesDto> getDailyChallenges() {
+        return ResponseEntity.ok(adminService.getDailyChallenges());
+    }
+
     @PatchMapping("/excerpts/{id}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody UpdateStatusDto dto) {
         try {

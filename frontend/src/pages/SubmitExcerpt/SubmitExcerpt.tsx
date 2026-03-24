@@ -126,6 +126,7 @@ const SubmitExcerpt: React.FC = () => {
       setSelectedComposer(null);
       setSelectedWork(null);
       setExcerptTitle('');
+      setExcerptCompositionYear(null);
       setExcerptDescription('');
     }
     setModalState(null);
