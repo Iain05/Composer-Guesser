@@ -108,7 +108,10 @@ public class DailyChallengeScheduler {
      * {@code tbl_user_point} entry for yesterday, excluding the submitter of
      * yesterday's excerpt (their streak is preserved). Then increments the streak
      * for the submitter of today's excerpt, since their featured day counts as a
-     * participation day.
+     * participation day. If today's and yesterday's excerpts share the same submitter
+     * (back-to-back featured challenges), the increment step is skipped — the
+     * exclusion above is sufficient and calling the increment would overwrite the
+     * preserved streak with 1 (since own-excerpt guesses never produce a point entry).
      */
     private void resetExpiredStreaks() {
         LocalDate today = LocalDate.now(VANCOUVER);
@@ -127,6 +130,14 @@ public class DailyChallengeScheduler {
 
         excerptDayRepository.findById(today).ifPresent(day -> {
             Long submitterId = day.getExcerpt().getUploadedByUserId();
+            if (submitterId.equals(yesterdaySubmitterId)) {
+                // Same user submitted both consecutive days; the exclusion above already
+                // preserved their streak — calling incrementStreakForSubmitter would
+                // overwrite it with 1 because they have no point entry for yesterday
+                // (they can't earn points on their own excerpt).
+                log.info("Skipping streak increment for submitter of today's excerpt (userId={}) — already protected as yesterday's submitter.", submitterId);
+                return;
+            }
             userRepository.incrementStreakForSubmitter(submitterId, yesterday);
             log.info("Incremented streak for submitter of today's excerpt (userId={}).", submitterId);
         });
