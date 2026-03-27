@@ -158,6 +158,8 @@ public class GuessService {
                 nationalityHint,
                 excerpt.getName(),
                 target.getCompleteName(),
+                excerpt.getCompositionYear(),
+                excerpt.getDescription(),
                 pointsEarned,
                 newStreak
         );
@@ -209,6 +211,8 @@ public class GuessService {
                                         guessed.getNationality().equals(target.getNationality()) ? "CORRECT" : "WRONG",
                                         excerpt.getName(),
                                         target.getCompleteName(),
+                                        excerpt.getCompositionYear(),
+                                        excerpt.getDescription(),
                                         correct ? todayPoints : 0,
                                         0
                                 );

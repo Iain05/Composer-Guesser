@@ -10,6 +10,8 @@ export interface GuessResult {
   nationalityHint: 'CORRECT' | 'WRONG';
   pieceTitle: string;
   targetComposerName: string;
+  compositionYear: number | null;
+  pieceDescription: string | null;
   pointsEarned: number;
   newStreak: number;
 }

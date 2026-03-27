@@ -10,7 +10,7 @@ import { getDailyChallenge } from '@src/api/excerpt';
 import { getComposers, type ComposerSummary } from '@src/api/composer';
 import { useAuth } from '@src/context/AuthContext';
 import { useToast } from '@src/context/ToastContext';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Music } from 'lucide-react';
 import type { ShareData } from '@src/utils/shareScore';
 
 const DailyComposer: React.FC = () => {
@@ -96,12 +96,38 @@ const DailyComposer: React.FC = () => {
             : undefined}
         />
 
-        <GuessControls
-          disabled={isGameOver || isLoading}
-          composers={composers}
-          onSubmit={submitGuess}
-          onError={showToast}
-        />
+        {(!isGameOver || !lastGuess) &&
+          <GuessControls
+            disabled={isGameOver || isLoading}
+            composers={composers}
+            onSubmit={submitGuess}
+            onError={showToast}
+          />
+        }
+
+        {isGameOver && lastGuess && (
+          <div className="bg-surface-warm border border-border rounded-2xl px-8 pt-6 pb-6 shadow-sm">
+            <div className="flex items-center gap-2 text-primary mb-3">
+              <Music className="w-4 h-4" />
+              <span className="text-sm font-bold uppercase tracking-wider">The Piece</span>
+            </div>
+            <p className="serif text-xl text-ink leading-snug">
+              {lastGuess.pieceTitle}
+            </p>
+            <p className="text-ink-muted text-sm mt-1">
+              {lastGuess.targetComposerName}
+              {lastGuess.compositionYear != null && (
+                <> · {lastGuess.compositionYear}</>
+              )}
+            </p>
+            {lastGuess.pieceDescription && (
+              <>
+                <div className="border-t border-border mt-4 mb-3" />
+                <p className="text-ink-muted text-sm leading-relaxed">{lastGuess.pieceDescription}</p>
+              </>
+            )}
+          </div>
+        )}
 
         <GuessGrid guesses={guesses} isGameOver={isGameOver} shareData={shareData} />
 

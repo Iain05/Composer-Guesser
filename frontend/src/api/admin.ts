@@ -60,6 +60,7 @@ export interface DailyChallengeEntry {
   excerptId: number;
   excerptName: string;
   composerName: string;
+  submitterName: string;
   challengeNumber: number;
 }
 
@@ -99,6 +100,21 @@ export async function updateExcerptStatus(id: number, status: ExcerptStatus, tok
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error((body as { error?: string }).error ?? 'Failed to update status');
+  }
+}
+
+export async function saveExcerptMetadata(id: number, data: ApproveExcerptRequest, token: string): Promise<void> {
+  const res = await fetch(`/api/admin/excerpts/${id}/metadata`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? 'Failed to save changes');
   }
 }
 

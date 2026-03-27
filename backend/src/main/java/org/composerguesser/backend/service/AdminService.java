@@ -25,7 +25,8 @@ import java.util.List;
 
 /**
  * Business logic for the admin excerpt management workflow.
- * Admins can list excerpts by status, update their metadata, and publish or reject them.
+ * Admins can list excerpts by status, update their metadata, and publish or
+ * reject them.
  */
 @Service
 public class AdminService {
@@ -39,9 +40,9 @@ public class AdminService {
     private String audioBaseUrl;
 
     public AdminService(ExcerptRepository excerptRepository,
-                        ExcerptDayRepository excerptDayRepository,
-                        ComposerRepository composerRepository,
-                        UserRepository userRepository) {
+            ExcerptDayRepository excerptDayRepository,
+            ComposerRepository composerRepository,
+            UserRepository userRepository) {
         this.excerptRepository = excerptRepository;
         this.excerptDayRepository = excerptDayRepository;
         this.composerRepository = composerRepository;
@@ -49,7 +50,8 @@ public class AdminService {
     }
 
     /**
-     * Returns a page of excerpts matching any of the given statuses, optionally filtered
+     * Returns a page of excerpts matching any of the given statuses, optionally
+     * filtered
      * to a single composer, ordered oldest-first.
      *
      * @param statuses   one or more statuses to include
@@ -57,12 +59,13 @@ public class AdminService {
      * @param page       zero-based page index
      * @param size       items per page
      */
-    public Page<ExcerptReviewDto> getExcerpts(List<ExcerptStatus> statuses, Long composerId, String sort, int page, int size) {
+    public Page<ExcerptReviewDto> getExcerpts(List<ExcerptStatus> statuses, Long composerId, String sort, int page,
+            int size) {
         Sort springSort = switch (sort) {
-            case "timesUsed_desc"    -> Sort.by("timesUsed").descending();
-            case "dateUploaded_asc"  -> Sort.by("dateUploaded").ascending();
+            case "timesUsed_desc" -> Sort.by("timesUsed").descending();
+            case "dateUploaded_asc" -> Sort.by("dateUploaded").ascending();
             case "dateUploaded_desc" -> Sort.by("dateUploaded").descending();
-            default                  -> Sort.by("timesUsed").ascending();
+            default -> Sort.by("timesUsed").ascending();
         };
         PageRequest pageable = PageRequest.of(page, size, springSort);
         Page<Excerpt> results = composerId != null
@@ -86,16 +89,19 @@ public class AdminService {
     }
 
     /**
-     * Updates the mutable fields of an excerpt and sets its status to {@link ExcerptStatus#ACTIVE},
+     * Updates the mutable fields of an excerpt and sets its status to
+     * {@link ExcerptStatus#ACTIVE},
      * making it eligible for the daily challenge.
      * <p>
-     * If the excerpt is marked as point-eligible and points have not yet been awarded,
+     * If the excerpt is marked as point-eligible and points have not yet been
+     * awarded,
      * 2 points are added to the submitter's {@code total_points}.
      * </p>
      *
      * @param excerptId the excerpt to approve
      * @param dto       updated metadata from the admin
-     * @throws IllegalArgumentException if the excerpt or the new composer does not exist
+     * @throws IllegalArgumentException if the excerpt or the new composer does not
+     *                                  exist
      */
     @Transactional
     public void approveExcerpt(Long excerptId, ApproveExcerptDto dto) {
@@ -127,6 +133,37 @@ public class AdminService {
         excerptRepository.save(excerpt);
     }
 
+    /**
+     * Updates the mutable fields of an excerpt without changing its status.
+     * Used by admins to correct metadata on already-active (or any-status)
+     * excerpts.
+     *
+     * @param excerptId the excerpt to update
+     * @param dto       updated metadata from the admin
+     * @throws IllegalArgumentException if the excerpt or the new composer does not
+     *                                  exist
+     */
+    @Transactional
+    public void saveMetadata(Long excerptId, ApproveExcerptDto dto) {
+        Excerpt excerpt = excerptRepository.findById(excerptId)
+                .orElseThrow(() -> new IllegalArgumentException("Excerpt not found: " + excerptId));
+
+        if (dto.getComposerId() == null || !composerRepository.existsById(dto.getComposerId())) {
+            throw new IllegalArgumentException("Composer not found: " + dto.getComposerId());
+        }
+        if (dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("Excerpt name must not be blank");
+        }
+
+        excerpt.setComposerId(dto.getComposerId());
+        excerpt.setWorkId(dto.getWorkId());
+        excerpt.setName(dto.getName().trim());
+        excerpt.setCompositionYear(dto.getCompositionYear());
+        excerpt.setDescription(dto.getDescription());
+
+        excerptRepository.save(excerpt);
+    }
+
     @Transactional
     public void scheduleTomorrow(Long excerptId) {
         Excerpt excerpt = excerptRepository.findById(excerptId)
@@ -137,7 +174,8 @@ public class AdminService {
         LocalDate tomorrow = LocalDate.now(ZoneId.of("America/Vancouver")).plusDays(1);
         ExcerptDay day = excerptDayRepository.findById(tomorrow).orElse(new ExcerptDay());
 
-        // Decrement the displaced excerpt's counter (if there was one and it's different)
+        // Decrement the displaced excerpt's counter (if there was one and it's
+        // different)
         if (day.getExcerpt() != null && !day.getExcerpt().getExcerptId().equals(excerptId)) {
             Excerpt displaced = day.getExcerpt();
             displaced.setTimesUsed(Math.max(0, displaced.getTimesUsed() - 1));
@@ -166,7 +204,11 @@ public class AdminService {
         String composerName = composerRepository.findById(excerpt.getComposerId())
                 .map(Composer::getCompleteName)
                 .orElse("Unknown composer");
-        return new DailyChallengesDto.Entry(excerpt.getExcerptId(), excerpt.getName(), composerName, ed.getChallengeNumber());
+        String submitterName = userRepository.findById(excerpt.getUploadedByUserId())
+                .map(User::getDisplayUsername)
+                .orElse("Uknown user");
+        return new DailyChallengesDto.Entry(excerpt.getExcerptId(), excerpt.getName(), composerName, submitterName,
+                ed.getChallengeNumber());
     }
 
     private ExcerptReviewDto toDto(Excerpt excerpt) {
@@ -194,7 +236,6 @@ public class AdminService {
                 excerpt.getDescription(),
                 dateUploaded,
                 excerpt.getTimesUsed(),
-                excerpt.getStatus()
-        );
+                excerpt.getStatus());
     }
 }

@@ -95,4 +95,22 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**
+     * Updates an excerpt's metadata without changing its status.
+     * Used to correct fields on already-active excerpts.
+     *
+     * @param id  the excerpt to update
+     * @param dto updated metadata (composer, work, title, year, description)
+     * @return 200 on success, 400 if validation fails
+     */
+    @PatchMapping("/excerpts/{id}/metadata")
+    public ResponseEntity<?> saveMetadata(@PathVariable Long id, @RequestBody ApproveExcerptDto dto) {
+        try {
+            adminService.saveMetadata(id, dto);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
